@@ -80,6 +80,11 @@ GitHub Pages（index.html 读取同目录 data.json，拼假计算全部在前�
   },
   "hk": { "2027": [ { "date": "2027-02-06", "name": "农历年初一" } ] },
   "announce": { "2026": { "first_seen": "2026-10-21T10:21:59+08:00", "fresh": false } },   // fresh=由预估转为官方
+  "summary": {                                   // 给 pages-dashboard 的摘要（内地），字段只增不减
+    "next": { "date": "2027-01-01", "name": "元旦", "days": 72, "workdays": 52, "est": true },
+    "plan_year": 2027, "plan_official": false, "max_leave": 3,
+    "top": [ { "from": "2027-02-05", "to": "2027-02-14", "len": 10, "used": 2, "leave": ["2027-02-11", "2027-02-12"], "names": ["春节"] } ]
+  },
   "sources": [ { "name": "holiday-cn 2027", "ok": true, "count": 0, "updated": "..." } ]
 }
 ```

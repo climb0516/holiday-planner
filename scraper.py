@@ -89,6 +89,56 @@ def hk_all():
     return {y: sorted(v, key=lambda r: r["date"]) for y, v in out.items()}
 
 
+def summarize(cn, today, max_leave=3):
+    """给 pages-dashboard 用的摘要：下一个内地假期 + 计划年份请 ≤ max_leave 天最划算的方案。
+    规则与前端「全年最划算」一致：从休息日起、到休息日止，只算中间桥接的请假。"""
+    info = {r["date"]: {**r, "est": not v["official"]} for v in cn.values() for r in v["days"]}
+
+    def is_off(d):
+        r = info.get(d.isoformat())
+        return r["off"] if r else d.weekday() >= 5
+
+    hol = sorted(k for k, r in info.items() if r["off"] and k >= today.isoformat())
+    nxt = None
+    if hol:
+        d0 = date.fromisoformat(hol[0])
+        work = sum(1 for i in range((d0 - today).days) if not is_off(today + timedelta(days=i)))
+        nxt = {"date": hol[0], "name": info[hol[0]]["name"], "days": (d0 - today).days, "workdays": work, "est": info[hol[0]]["est"]}
+
+    # 计划年份：当年还有假期就看当年，否则看明年
+    y = today.year if any(k.startswith(str(today.year)) for k in hol) else today.year + 1
+    start, end = max(date(y, 1, 1) - timedelta(days=20), today), date(y, 12, 31) + timedelta(days=20)
+    days = [start + timedelta(days=i) for i in range((end - start).days + 1)]
+    off = [is_off(d) for d in days]
+    plans = []
+    for s in range(len(days)):
+        if not off[s] or (s > 0 and off[s - 1]):
+            continue
+        e, used = s, 0
+        while e + 1 < len(days) and used + (not off[e + 1]) <= max_leave:
+            e += 1
+            used += not off[e]
+        while e > s and not off[e]:
+            e -= 1
+        span = days[s:e + 1]
+        names = sorted({info[d.isoformat()]["name"] for d in span if d.isoformat() in info and info[d.isoformat()]["off"]},
+                       key=lambda n: min(k for k, r in info.items() if r["name"] == n))
+        if len(span) < 3 or not names or (days[s].year != y and days[e].year != y):
+            continue
+        leave = [d.isoformat() for d in span if not is_off(d)]
+        plans.append({"from": days[s].isoformat(), "to": days[e].isoformat(), "len": len(span),
+                      "used": len(leave), "leave": leave, "names": names})
+    plans.sort(key=lambda p: (-p["len"], p["used"], p["from"]))
+    picked = []
+    for p in plans:
+        if all(p["to"] < q["from"] or p["from"] > q["to"] for q in picked):
+            picked.append(p)
+        if len(picked) >= 5:
+            break
+    return {"next": nxt, "plan_year": y, "plan_official": cn.get(str(y), {}).get("official", False),
+            "max_leave": max_leave, "top": picked}
+
+
 def main():
     now = now_cst()
     stamp = now.isoformat(timespec="seconds")
@@ -137,6 +187,7 @@ def main():
         "cn": cn,
         "hk": hk,
         "announce": announce,
+        "summary": summarize(cn, now.date()),
         "sources": sources,
     }
     DATA_FILE.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), "utf-8")
