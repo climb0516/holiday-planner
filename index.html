@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<!-- Created by 青云 on 2026/10/21. -->
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark light">
+  <title>Holiday Planner · 拼假攻略</title>
+  <meta name="description" content="内地 / 香港全年放假与调休日历，自动算出请 N 天连休 M 天的最优拼假方案">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏖️</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0b0a09;
+      --panel: #15130f;
+      --hover: rgba(255,255,255,0.04);
+      --line: rgba(255,255,255,0.07);
+      --line-2: rgba(255,255,255,0.14);
+      --text-1: #f2efe9;
+      --text-2: #aba497;
+      --text-3: #6f695e;
+      --accent: #f59e0b;
+      --grad: linear-gradient(120deg, #fb7185 0%, #f59e0b 50%, #facc15 100%);
+      --hol: #f43f5e;
+      --hol-bg: rgba(244,63,94,0.16);
+      --work: #a78bfa;
+      --work-bg: rgba(167,139,250,0.16);
+      --leave: #f59e0b;
+      --leave-bg: rgba(245,158,11,0.22);
+      --span-bg: rgba(245,158,11,0.08);
+      --wkd: #7d766a;
+      --shadow: 0 0 0 1px var(--line), 0 12px 32px rgba(0,0,0,0.35);
+      --input-bg: rgba(255,255,255,0.04);
+    }
+    :root[data-theme="light"] {
+      --bg: #faf8f4;
+      --panel: #ffffff;
+      --hover: rgba(40,30,10,0.035);
+      --line: rgba(40,30,10,0.08);
+      --line-2: rgba(40,30,10,0.16);
+      --text-1: #1f1a12;
+      --text-2: #5d5547;
+      --text-3: #9a917f;
+      --accent: #d97706;
+      --hol: #e11d48;
+      --hol-bg: rgba(225,29,72,0.10);
+      --work: #7c3aed;
+      --work-bg: rgba(124,58,237,0.10);
+      --leave: #d97706;
+      --leave-bg: rgba(217,119,6,0.18);
+      --span-bg: rgba(217,119,6,0.07);
+      --wkd: #a39a88;
+      --shadow: 0 0 0 1px var(--line), 0 10px 28px rgba(40,30,10,0.06);
+      --input-bg: rgba(40,30,10,0.03);
+    }
+
+    body {
+      background: var(--bg); color: var(--text-1);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      font-size: 14px; line-height: 1.55; -webkit-font-smoothing: antialiased; min-height: 100vh;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+    input { font: inherit; color: var(--text-1); }
+    .num { font-variant-numeric: tabular-nums; }
+
+    /* 顶栏 */
+    .topbar { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--bg) 94%, transparent); border-bottom: 1px solid var(--line); }
+    .topbar-inner { max-width: 1240px; margin: 0 auto; padding: 12px 20px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 17px; letter-spacing: -0.02em; white-space: nowrap; }
+    .logo-mark { width: 30px; height: 30px; border-radius: 9px; background: var(--grad); display: grid; place-items: center; font-size: 16px; }
+    .logo small { font-weight: 500; color: var(--text-3); font-size: 12px; margin-left: 2px; }
+    .seg { display: inline-flex; background: var(--hover); border: 1px solid var(--line); border-radius: 10px; padding: 3px; }
+    .seg button { padding: 5px 12px; border-radius: 7px; font-size: 13px; color: var(--text-2); font-weight: 600; white-space: nowrap; }
+    .seg button:hover { color: var(--text-1); }
+    .seg button.active { background: var(--panel); color: var(--text-1); box-shadow: 0 0 0 1px var(--line-2); }
+    .seg button small { font-weight: 500; color: var(--text-3); font-size: 11px; margin-left: 3px; }
+    .spacer { flex: 1; }
+    .updated { font-size: 12px; color: var(--text-3); white-space: nowrap; }
+    .icon-btn { width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--line); display: grid; place-items: center; color: var(--text-2); flex-shrink: 0; }
+    .icon-btn:hover { color: var(--text-1); border-color: var(--line-2); }
+    .icon-btn.spin svg { animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* 布局 */
+    .layout { max-width: 1240px; margin: 0 auto; padding: 22px 20px 60px; display: grid; grid-template-columns: minmax(0,1fr) 300px; gap: 22px; }
+    .aside { position: sticky; top: 76px; align-self: start; display: flex; flex-direction: column; gap: 14px; }
+    .panel { background: var(--panel); border-radius: 14px; box-shadow: var(--shadow); }
+    .widget { padding: 16px; }
+    .widget h3 { font-size: 13px; font-weight: 700; color: var(--text-2); margin-bottom: 12px; }
+    .section-title { font-size: 15px; font-weight: 700; margin: 26px 0 12px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    .section-title small { color: var(--text-3); font-weight: 500; font-size: 12px; }
+    .muted { color: var(--text-3); font-size: 12px; }
+
+    .banner { padding: 12px 16px; border-radius: 12px; margin-bottom: 16px; font-size: 13px; line-height: 1.6; border: 1px solid; }
+    .banner.est { border-color: color-mix(in srgb, var(--work) 40%, transparent); background: var(--work-bg); }
+    .banner.new { border-color: color-mix(in srgb, var(--hol) 45%, transparent); background: var(--hol-bg); font-weight: 600; }
+    .banner a { text-decoration: underline; text-underline-offset: 2px; }
+
+    /* 主卡 */
+    .hero { padding: 22px; display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 18px; align-items: center; }
+    .hero-k { color: var(--text-3); font-size: 12px; font-weight: 600; letter-spacing: .04em; }
+    .hero-big { font-size: 34px; font-weight: 800; letter-spacing: -0.03em; margin: 4px 0 6px; line-height: 1.15; }
+    .hero-big em { font-style: normal; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .hero-sub { color: var(--text-2); }
+    .stepper { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .stepper label { font-size: 12px; color: var(--text-3); font-weight: 600; }
+    .stepper-row { display: flex; align-items: center; gap: 6px; }
+    .stepper-row button { width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--line-2); font-size: 18px; font-weight: 600; }
+    .stepper-row button:hover { background: var(--hover); }
+    .stepper-row input { width: 58px; height: 36px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--input-bg); text-align: center; font-size: 18px; font-weight: 700; }
+    .toggle { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-2); cursor: pointer; user-select: none; }
+    .toggle input { accent-color: var(--accent); }
+
+    /* 每个假期 × 请假天数 */
+    .grid-wrap { overflow-x: auto; }
+    table.matrix { width: 100%; border-collapse: collapse; min-width: 560px; }
+    .matrix th, .matrix td { padding: 9px 10px; text-align: center; border-bottom: 1px solid var(--line); white-space: nowrap; }
+    .matrix th { font-size: 12px; color: var(--text-3); font-weight: 600; }
+    .matrix td:first-child, .matrix th:first-child { text-align: left; }
+    .matrix td.name b { font-weight: 700; }
+    .matrix td.name small { display: block; color: var(--text-3); font-size: 11.5px; }
+    .matrix tr:last-child td { border-bottom: 0; }
+    .cell { display: inline-flex; flex-direction: column; align-items: center; min-width: 52px; padding: 4px 6px; border-radius: 8px; }
+    .cell b { font-size: 16px; font-weight: 800; }
+    .cell small { font-size: 10.5px; color: var(--text-3); }
+    .cell:hover { background: var(--hover); }
+    .cell.gain b { color: var(--accent); }
+    .cell.sel { background: var(--leave-bg); box-shadow: 0 0 0 1px var(--leave); }
+    .cell.dim b { color: var(--text-3); font-weight: 600; }
+    .matrix tr.past td { opacity: .45; }
+
+    /* 方案列表 */
+    .plans { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+    .plan { padding: 14px 16px; text-align: left; display: flex; flex-direction: column; gap: 6px; border-radius: 14px; background: var(--panel); box-shadow: var(--shadow); }
+    .plan:hover { box-shadow: 0 0 0 1px var(--line-2), 0 12px 32px rgba(0,0,0,0.2); }
+    .plan.sel { box-shadow: 0 0 0 2px var(--leave); }
+    .plan-top { display: flex; align-items: baseline; gap: 8px; }
+    .plan-days { font-size: 22px; font-weight: 800; }
+    .plan-days small { font-size: 12px; font-weight: 600; color: var(--text-2); margin-left: 2px; }
+    .tag { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--hol-bg); color: var(--hol); white-space: nowrap; }
+    .tag.eff { background: var(--leave-bg); color: var(--leave); margin-left: auto; }
+    .plan-range { font-weight: 600; }
+    .plan-leave { font-size: 12px; color: var(--text-2); }
+    .strip { display: flex; gap: 2px; margin-top: 2px; }
+    .strip i { flex: 1; height: 6px; border-radius: 2px; background: var(--wkd); opacity: .55; }
+    .strip i.h { background: var(--hol); opacity: 1; }
+    .strip i.l { background: var(--leave); opacity: 1; }
+
+    /* 选中方案详情 */
+    .detail { padding: 16px 18px; margin-top: 14px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    .detail-text { flex: 1; min-width: 220px; }
+    .detail-text b { font-size: 15px; }
+    .btn { padding: 7px 14px; border-radius: 10px; border: 1px solid var(--line-2); font-size: 13px; font-weight: 600; white-space: nowrap; }
+    .btn:hover { background: var(--hover); }
+    .btn.primary { background: var(--accent); color: #1b1305; border-color: var(--accent); }
+    .btn.primary:hover { filter: brightness(1.08); }
+
+    /* 年历 */
+    .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--text-2); }
+    .legend span { display: inline-flex; align-items: center; gap: 5px; }
+    .legend i { width: 12px; height: 12px; border-radius: 4px; display: inline-block; }
+    .months { display: grid; grid-template-columns: repeat(auto-fill, minmax(232px, 1fr)); gap: 12px; }
+    .month { padding: 12px; }
+    .month h4 { font-size: 13px; font-weight: 700; margin-bottom: 8px; display: flex; justify-content: space-between; }
+    .month h4 small { color: var(--text-3); font-weight: 500; }
+    .dow, .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+    .dow span { font-size: 10.5px; color: var(--text-3); text-align: center; padding-bottom: 2px; }
+    .d { aspect-ratio: 1; display: grid; place-items: center; font-size: 12px; border-radius: 7px; position: relative; font-variant-numeric: tabular-nums; }
+    .d.wkd { color: var(--wkd); }
+    .d.hol { background: var(--hol-bg); color: var(--hol); font-weight: 700; }
+    .d.work { background: var(--work-bg); color: var(--work); font-weight: 700; }
+    .d.work::after { content: "班"; position: absolute; top: 0; right: 2px; font-size: 8px; }
+    .d.span { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--leave) 45%, transparent); }
+    .d.span:not(.hol):not(.work):not(.leave) { background: var(--span-bg); }
+    .d.leave { background: var(--leave); color: #1b1305; font-weight: 800; }
+    .d.today { outline: 2px solid var(--text-1); outline-offset: -2px; }
+    .d.est.hol { background: transparent; border: 1px dashed var(--hol); }
+
+    /* 侧栏 */
+    .count-big { font-size: 40px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
+    .count-big small { font-size: 14px; font-weight: 600; color: var(--text-2); margin-left: 4px; }
+    .kv { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; padding: 6px 0; border-bottom: 1px dashed var(--line); }
+    .kv:last-child { border-bottom: 0; }
+    .kv span:first-child { color: var(--text-2); }
+    .kv b { font-weight: 700; }
+    .alloc-row { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; font-size: 13px; padding: 6px 0; border-bottom: 1px dashed var(--line); }
+    .alloc-row:last-child { border-bottom: 0; }
+    .alloc-row small { grid-column: 1 / -1; color: var(--text-3); font-size: 11.5px; }
+    .src { display: flex; align-items: center; gap: 8px; font-size: 12.5px; padding: 4px 0; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: #34d399; flex-shrink: 0; }
+    .dot.bad { background: var(--hol); }
+
+    .empty { padding: 30px; text-align: center; color: var(--text-3); }
+    .view { display: none; }
+    .view.active { display: block; }
+    .toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(20px); opacity: 0; background: var(--text-1); color: var(--bg); padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; transition: .2s; pointer-events: none; z-index: 50; }
+    .toast.show { opacity: 1; transform: translateX(-50%); }
+
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: minmax(0,1fr); }
+      .aside { position: static; }
+    }
+    @media (max-width: 600px) {
+      .topbar-inner { padding: 10px 16px; gap: 10px; }
+      .layout { padding: 16px 16px 48px; }
+      .logo small, .updated { display: none; }
+      .hero { grid-template-columns: minmax(0,1fr); }
+      .hero-big { font-size: 27px; }
+      .stepper { align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="logo"><div class="logo-mark">🏖️</div>拼假攻略<small>Holiday Planner</small></div>
+      <div class="seg" id="viewSeg">
+        <button data-v="plan" class="active">拼假方案</button>
+        <button data-v="cal">年历</button>
+      </div>
+      <div class="seg" id="regionSeg">
+        <button data-r="cn" class="active">内地</button>
+        <button data-r="hk">香港</button>
+      </div>
+      <div class="seg" id="yearSeg"></div>
+      <div class="spacer"></div>
+      <span class="updated" id="updated">加载中…</span>
+      <button class="icon-btn" id="reloadBtn" title="重新读取数据"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></button>
+      <a class="icon-btn" href="https://github.com/climb0516/holiday-planner/actions/workflows/scrape.yml" target="_blank" rel="noopener" title="到 GitHub Actions 手动触发抓取">⚡</a>
+      <button class="icon-btn" id="themeBtn" title="深浅色">☾</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <main>
+      <div id="banners"></div>
+
+      <section class="view active" id="view-plan">
+        <div class="panel hero">
+          <div>
+            <div class="hero-k" id="heroK">全年最划算</div>
+            <div class="hero-big" id="heroBig">—</div>
+            <div class="hero-sub" id="heroSub"></div>
+          </div>
+          <div class="stepper">
+            <label for="leaveInput">我最多请几天假</label>
+            <div class="stepper-row">
+              <button id="minus" aria-label="少一天">−</button>
+              <input id="leaveInput" class="num" type="number" min="0" max="15" value="3" inputmode="numeric">
+              <button id="plus" aria-label="多一天">+</button>
+            </div>
+            <label class="toggle" id="futureWrap"><input type="checkbox" id="futureOnly" checked>只看今天之后</label>
+          </div>
+        </div>
+
+        <div class="section-title">每个假期怎么拼<small>格子里是连休天数，点一下看具体请哪几天；颜色高亮表示比不请假多休</small></div>
+        <div class="panel grid-wrap" id="matrix"></div>
+
+        <div class="section-title">全年最划算 Top 10<small id="topHint"></small></div>
+        <div class="plans" id="plans"></div>
+
+        <div class="panel detail" id="detail" hidden></div>
+      </section>
+
+      <section class="view" id="view-cal">
+        <div class="section-title" style="margin-top:0">全年日历
+          <div class="legend">
+            <span><i style="background:var(--hol-bg);box-shadow:inset 0 0 0 1px var(--hol)"></i>放假</span>
+            <span><i style="background:var(--work-bg);box-shadow:inset 0 0 0 1px var(--work)"></i>调休上班</span>
+            <span><i style="background:var(--leave)"></i>建议请假</span>
+            <span><i style="background:var(--span-bg);box-shadow:inset 0 0 0 1px var(--leave)"></i>连休区间</span>
+          </div>
+        </div>
+        <div class="months" id="months"></div>
+      </section>
+    </main>
+
+    <aside class="aside">
+      <div class="panel widget" id="countdown"></div>
+      <div class="panel widget">
+        <h3>年假怎么分最划算</h3>
+        <div class="stepper-row" style="margin-bottom:10px">
+          <span class="muted" style="flex:1">我今年还有年假</span>
+          <input id="balanceInput" class="num" type="number" min="0" max="30" value="5" inputmode="numeric" style="width:56px;height:32px;border-radius:9px;border:1px solid var(--line-2);background:var(--input-bg);text-align:center;font-weight:700">
+          <span class="muted">天</span>
+        </div>
+        <div id="alloc"></div>
+      </div>
+      <div class="panel widget" id="yearStat"></div>
+      <div class="panel widget">
+        <h3>数据来源</h3>
+        <div id="sources"></div>
+        <p class="muted" style="margin-top:10px">内地：<a href="https://github.com/NateScarlet/holiday-cn" target="_blank" rel="noopener">holiday-cn</a>（解析国务院通知）；香港：<a href="https://www.gov.hk/sc/about/abouthk/holiday/" target="_blank" rel="noopener">1823 公众假期</a>。按每周五天工作制计算，周六、日休息。</p>
+      </div>
+    </aside>
+  </div>
+  <div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('hp.' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('hp.' + k, JSON.stringify(v)); } catch {} },
+};
+const WEEK = ['一', '二', '三', '四', '五', '六', '日'];
+const MAX_N = 15;
+
+let DATA = null;
+const state = {
+  view: store.get('view', 'plan'),
+  region: store.get('region', 'cn'),
+  year: null,
+  n: store.get('n', 3),
+  balance: store.get('balance', 5),
+  futureOnly: store.get('futureOnly', true),
+  sel: null,                  // 选中的方案 {s, e}
+};
+
+// ── 日期工具（全部按本地日历日，不涉及时区换算）──
+const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const parse = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+const md = s => { const d = parse(s); return `${d.getMonth() + 1}/${d.getDate()}`; };
+const mdw = s => { const d = parse(s); return `${md(s)}（${WEEK[(d.getDay() + 6) % 7]}）`; };
+const todayIso = iso(new Date());
+
+// ── 日历模型：每天是 休 / 班，附节日名 ──
+// cn：holiday-cn 的 off=true 为放假、off=false 为调休上班，其余按周末；hk：公众假期 + 周末
+function buildDayMap(region) {
+  const map = new Map();                // iso -> {name, off, est}
+  if (region === 'cn') {
+    for (const [y, v] of Object.entries(DATA.cn || {})) for (const r of v.days) map.set(r.date, { name: r.name, off: r.off, est: !v.official, comp: !!r.comp });
+  } else {
+    for (const list of Object.values(DATA.hk || {})) for (const r of list) map.set(r.date, { name: r.name, off: true });
+  }
+  return map;
+}
+function hkGroup(name) {
+  if (/农历年/.test(name)) return '农历新年';
+  if (/耶稣|复活/.test(name)) return '复活节';
+  if (/圣诞/.test(name)) return '圣诞节';
+  if (/中秋/.test(name)) return '中秋节';
+  if (/一月一日/.test(name)) return '元旦';
+  if (/成立纪念日/.test(name)) return '回归纪念日';
+  return name;
+}
+
+// 计算年份 y 的分析：前后各多看 20 天，跨年的连休也能算到
+function analyse(region, y) {
+  const map = buildDayMap(region);
+  const start = addDays(new Date(y, 0, 1), -20), end = addDays(new Date(y, 11, 31), 20);
+  const days = [];
+  for (let d = start; d <= end; d = addDays(d, 1)) {
+    const k = iso(d), info = map.get(k), wd = (d.getDay() + 6) % 7;
+    let off = wd >= 5, kind = off ? 'wkd' : 'normal', name = '';
+    if (info) {
+      off = info.off; kind = info.off ? 'hol' : 'work'; name = info.name;
+    }
+    days.push({ iso: k, off, kind, name, est: info?.est, wd });
+  }
+  // 节日分组：cn 按名称，hk 按相邻（间隔 ≤3 天）归并
+  const groups = [];
+  const inYear = d => d.iso.startsWith(String(y));
+  if (region === 'cn') {
+    const byName = new Map();
+    days.forEach((d, i) => { if (d.kind === 'hol' && inYear(d)) { if (!byName.has(d.name)) byName.set(d.name, []); byName.get(d.name).push(i); } });
+    for (const [name, idx] of byName) groups.push({ name, idx });
+  } else {
+    let cur = null;
+    days.forEach((d, i) => {
+      if (d.kind !== 'hol' || !inYear(d)) return;
+      if (cur && i - cur.idx[cur.idx.length - 1] <= 3) cur.idx.push(i);
+      else { cur = { name: hkGroup(d.name), idx: [i] }; groups.push(cur); }
+    });
+  }
+  groups.sort((a, b) => a.idx[0] - b.idx[0]);
+  // 前缀和：区间内工作日数（= 需请假天数）
+  const pre = [0];
+  days.forEach(d => pre.push(pre[pre.length - 1] + (d.off ? 0 : 1)));
+  const work = (s, e) => pre[e + 1] - pre[s];
+  return { days, groups, work, y };
+}
+
+// 以 s 为起点、请假不超过 n 天能延伸到的最远位置
+function maxEnd(A, s, n) {
+  let e = s;
+  while (e + 1 < A.days.length && A.work(s, e + 1) <= n) e++;
+  return e;
+}
+function mkPlan(A, s, e) {
+  const used = A.work(s, e);
+  const leave = [];
+  for (let i = s; i <= e; i++) if (!A.days[i].off) leave.push(A.days[i].iso);
+  const names = [...new Set(A.days.slice(s, e + 1).filter(d => d.kind === 'hol').map(d => state.region === 'hk' ? hkGroup(d.name) : d.name))];
+  return { s, e, len: e - s + 1, used, leave, names, from: A.days[s].iso, to: A.days[e].iso };
+}
+
+// 某个假期分组：请 k 天能拼出的最长连休（必须包含该假期至少一天）
+function bestForGroup(A, g, k) {
+  let best = null;
+  const lo = Math.max(0, g.idx[0] - 30), hi = Math.min(A.days.length - 1, g.idx[g.idx.length - 1]);
+  for (let s = lo; s <= hi; s++) {
+    if (A.work(s, s) > k) continue;
+    if (s > 0 && A.days[s - 1].off) continue;            // 起点前一天也休 → 不是最左端
+    const e = maxEnd(A, s, k);
+    if (e < g.idx[0]) continue;
+    const used = A.work(s, e);
+    const len = e - s + 1;
+    if (!best || len > best.len || (len === best.len && used < best.used)) best = { s, e, len, used };
+  }
+  return best && mkPlan(A, best.s, best.e);
+}
+
+// 全年：请 ≤ n 天的连休区间，按长度排序、贪心取不重叠。
+// 只从休息日起、到休息日止：首尾的请假只是 1 天换 1 天，不算「拼」
+function topPlans(A, n, futureOnly) {
+  const cands = [];
+  for (let s = 0; s < A.days.length; s++) {
+    if (!A.days[s].off || (s > 0 && A.days[s - 1].off)) continue;
+    let e = maxEnd(A, s, n);
+    while (e > s && !A.days[e].off) e--;
+    const p = mkPlan(A, s, e);
+    if (p.len < 3) continue;
+    if (!p.from.startsWith(String(A.y)) && !p.to.startsWith(String(A.y))) continue;
+    if (futureOnly && p.from < todayIso) continue;
+    cands.push(p);
+  }
+  cands.sort((a, b) => b.len - a.len || a.used - b.used || a.s - b.s);
+  const picked = [];
+  for (const p of cands) {
+    if (picked.some(q => !(p.e < q.s || p.s > q.e))) continue;
+    picked.push(p);
+    if (picked.length >= 10) break;
+  }
+  return picked;
+}
+
+// 年假分配：每个假期选请 k 天，总请假 ≤ B，最大化「多休」天数（分组背包）
+function allocate(A, B, futureOnly) {
+  const items = A.groups.map(g => {
+    const base = bestForGroup(A, g, 0);
+    const opts = [];
+    for (let k = 0; k <= Math.min(B, 10); k++) {
+      const p = bestForGroup(A, g, k);
+      if (!p) continue;
+      if (futureOnly && p.leave.some(x => x < todayIso)) continue;
+      opts.push({ k: p.used, gain: p.len - (base ? base.len : 0), p });
+    }
+    return { g, opts, base };
+  }).filter(it => !futureOnly || it.base && it.base.to >= todayIso);
+  // dp[b] = {gain, picks}
+  let dp = Array.from({ length: B + 1 }, () => ({ gain: 0, picks: [] }));
+  for (const it of items) {
+    const nd = dp.map(x => ({ ...x }));
+    for (let b = 0; b <= B; b++) for (const o of it.opts) {
+      if (o.k === 0 || o.k > b || o.gain <= 0) continue;
+      const v = dp[b - o.k].gain + o.gain;
+      if (v > nd[b].gain) nd[b] = { gain: v, picks: [...dp[b - o.k].picks, { name: it.g.name, ...o }] };
+    }
+    dp = nd;
+  }
+  return dp[B];
+}
+
+// ── 渲染 ──
+let A = null;
+function yearsFor(region) {
+  const src = region === 'cn' ? DATA.cn : DATA.hk;
+  return Object.keys(src || {}).map(Number).sort();
+}
+function render() {
+  const years = yearsFor(state.region);
+  if (!years.includes(state.year)) {
+    const now = new Date().getFullYear();
+    state.year = years.includes(now) ? now : years[years.length - 1];
+  }
+  A = analyse(state.region, state.year);
+  renderSegs(years);
+  renderBanners();
+  renderHero();
+  renderMatrix();
+  renderPlans();
+  renderDetail();
+  renderCalendar();
+  renderCountdown();
+  renderAlloc();
+  renderYearStat();
+  $('#futureWrap').style.display = state.year === new Date().getFullYear() ? '' : 'none';
+}
+function futureOn() { return state.futureOnly && state.year === new Date().getFullYear(); }
+
+function renderSegs(years) {
+  $('#yearSeg').innerHTML = years.map(y => {
+    const est = state.region === 'cn' && DATA.cn[y] && !DATA.cn[y].official;
+    return `<button data-y="${y}" class="${y === state.year ? 'active' : ''}">${y}${est ? '<small>预估</small>' : ''}</button>`;
+  }).join('');
+  document.querySelectorAll('#regionSeg button').forEach(b => b.classList.toggle('active', b.dataset.r === state.region));
+  document.querySelectorAll('#viewSeg button').forEach(b => b.classList.toggle('active', b.dataset.v === state.view));
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + state.view));
+}
+
+function renderBanners() {
+  const out = [];
+  for (const [y, a] of Object.entries(DATA.announce || {})) {
+    const days = (Date.now() - new Date(a.first_seen).getTime()) / 864e5;
+    if (a.fresh && days <= 14 && state.region === 'cn') {
+      const paper = DATA.cn[y]?.papers?.[0];
+      out.push(`<div class="banner new">🎉 ${y} 年放假安排已公布${paper ? `，<a href="${paper}" target="_blank" rel="noopener">查看国务院通知</a>` : ''}。下面的方案已按官方安排（含调休）重新计算。</div>`);
+    }
+  }
+  const cur = DATA.cn[state.year];
+  if (state.region === 'cn' && cur && !cur.official) {
+    out.push(`<div class="banner est"><b>${state.year} 年官方放假安排还没公布</b>（通常在前一年 11 月发布），下面是<b>非官方预估</b>：只按《全国年节及纪念日放假办法》算法定假日，落在周末的顺延补休，<b>不含调休上班日</b>。官方通知一发布，页面会自动换成正式安排。</div>`);
+  }
+  if (state.region === 'cn' && cur?.stale) out.push(`<div class="banner est">数据源暂时取不到，显示的是上一次抓到的数据。</div>`);
+  if (state.region === 'hk') out.push(`<div class="banner est">香港没有调休，按公众假期 + 周六日休息计算；如果你周六要上班，实际请假天数会更多。</div>`);
+  $('#banners').innerHTML = out.join('');
+}
+
+function renderHero() {
+  const b = topPlans(A, state.n, futureOn())[0];
+  $('#heroK').textContent = `${state.year} 年 · ${state.region === 'cn' ? '内地' : '香港'} · 请 ≤ ${state.n} 天最划算`;
+  if (!b) { $('#heroBig').textContent = '没有可拼的假期'; $('#heroSub').textContent = futureOn() ? '今年剩下的假期已经过完了，可以切到明年看看。' : ''; return; }
+  $('#heroBig').innerHTML = b.used ? `请 <em>${b.used}</em> 天，连休 <em>${b.len}</em> 天` : `不用请假，连休 <em>${b.len}</em> 天`;
+  $('#heroSub').textContent = `${mdw(b.from)} – ${mdw(b.to)}${b.names.length ? ' · ' + b.names.join('、') : ''}${b.used ? ' · 请假：' + b.leave.map(md).join('、') : ''}`;
+}
+
+function renderMatrix() {
+  const ks = [0, 1, 2, 3, 4, 5];
+  if (!A.groups.length) { $('#matrix').innerHTML = '<div class="empty">这一年没有假期数据</div>'; return; }
+  const rows = A.groups.map(g => {
+    const plans = ks.map(k => bestForGroup(A, g, k));
+    const base = plans[0]?.len || 0;
+    const first = A.days[g.idx[0]], last = A.days[g.idx[g.idx.length - 1]];
+    const past = plans[0] && plans[0].to < todayIso;
+    const cells = plans.map((p, i) => {
+      if (!p) return '<td>—</td>';
+      // 请 k 天和请 k-1 天一样长 → 多请没用，弱化
+      const prev = i ? plans[i - 1] : null;
+      const useless = prev && p.len === prev.len;
+      const sel = state.sel && state.sel.from === p.from && state.sel.to === p.to;
+      return `<td><button class="cell ${p.len > base ? 'gain' : ''} ${useless ? 'dim' : ''} ${sel ? 'sel' : ''}" data-from="${p.from}" data-to="${p.to}"><b class="num">${p.len}</b><small>${useless ? '多请没用' : p.used ? `${md(p.from)}–${md(p.to)}` : '法定+周末'}</small></button></td>`;
+    }).join('');
+    return `<tr class="${past ? 'past' : ''}"><td class="name"><b>${g.name}</b><small>${md(first.iso)}${first.iso !== last.iso ? '–' + md(last.iso) : ''}${first.est ? ' · 预估' : ''}</small></td>${cells}</tr>`;
+  }).join('');
+  $('#matrix').innerHTML = `<table class="matrix"><thead><tr><th>假期</th>${ks.map(k => `<th>${k ? `请 ${k} 天` : '不请假'}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function strip(p) {
+  return `<div class="strip">${A.days.slice(p.s, p.e + 1).map(d => `<i class="${d.kind === 'hol' ? 'h' : !d.off ? 'l' : ''}"></i>`).join('')}</div>`;
+}
+function renderPlans() {
+  const list = topPlans(A, state.n, futureOn());
+  $('#topHint').textContent = `请假不超过 ${state.n} 天，互不重叠，按连休天数排序${futureOn() ? '，只含今天之后' : ''}`;
+  if (!list.length) { $('#plans').innerHTML = '<div class="panel empty" style="grid-column:1/-1">没有找到方案</div>'; return; }
+  $('#plans').innerHTML = list.map(p => {
+    const sel = state.sel && state.sel.from === p.from && state.sel.to === p.to;
+    const eff = p.used ? `1 换 ${(p.len / p.used).toFixed(1)}` : '免请假';
+    return `<button class="plan ${sel ? 'sel' : ''}" data-from="${p.from}" data-to="${p.to}">
+      <div class="plan-top"><span class="plan-days num">${p.len}<small>天</small></span>${p.names.slice(0, 2).map(n => `<span class="tag">${n}</span>`).join('')}<span class="tag eff">${eff}</span></div>
+      <div class="plan-range">${mdw(p.from)} – ${mdw(p.to)}</div>
+      <div class="plan-leave">${p.used ? `请 ${p.used} 天：${p.leave.map(md).join('、')}` : '法定假日 + 周末，不用请假'}</div>
+      ${strip(p)}
+    </button>`;
+  }).join('');
+}
+
+function findPlan(from, to) {
+  const s = A.days.findIndex(d => d.iso === from), e = A.days.findIndex(d => d.iso === to);
+  return s >= 0 && e >= 0 ? mkPlan(A, s, e) : null;
+}
+function planText(p) {
+  return `${state.region === 'cn' ? '' : '香港 '}${p.names.join('、') || '连休'}：${mdw(p.from)} – ${mdw(p.to)} 连休 ${p.len} 天${p.used ? `，请假 ${p.used} 天（${p.leave.map(md).join('、')}）` : '，不用请假'}`;
+}
+function renderDetail() {
+  const el = $('#detail');
+  const p = state.sel && findPlan(state.sel.from, state.sel.to);
+  if (!p) { el.hidden = true; return; }
+  el.hidden = false;
+  const work = A.days.slice(p.s, p.e + 1).filter(d => d.kind === 'work').map(d => md(d.iso));
+  el.innerHTML = `<div class="detail-text"><b>${planText(p)}</b><div class="muted" style="margin-top:4px">${work.length ? `其中 ${work.join('、')} 是调休上班日，也要请假。` : ''}${A.days[p.s].est ? '预估安排，以官方通知为准。' : ''}</div></div>
+    <button class="btn" id="copyBtn">复制文字</button>
+    <button class="btn" id="calBtn">在年历中查看</button>
+    <button class="btn primary" id="icsBtn">加到手机日历</button>`;
+  $('#copyBtn').onclick = () => { navigator.clipboard?.writeText(planText(p)).then(() => toast('已复制'), () => toast('复制失败')); };
+  $('#calBtn').onclick = () => { state.view = 'cal'; store.set('view', 'cal'); render(); document.getElementById('m-' + p.from.slice(0, 7))?.scrollIntoView({ behavior: 'smooth', block: 'center' }); };
+  $('#icsBtn').onclick = () => downloadIcs(p);
+}
+
+function downloadIcs(p) {
+  const ymd = s => s.replace(/-/g, '');
+  const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+  const ev = (uid, from, toExcl, title, desc) => ['BEGIN:VEVENT', `UID:${uid}@holiday-planner`, `DTSTAMP:${stamp}`, `DTSTART;VALUE=DATE:${ymd(from)}`, `DTEND;VALUE=DATE:${ymd(toExcl)}`, `SUMMARY:${title}`, `DESCRIPTION:${desc}`, 'TRANSP:TRANSPARENT', 'END:VEVENT'];
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//holiday-planner//CN', 'CALSCALE:GREGORIAN'];
+  lines.push(...ev(`span-${p.from}`, p.from, iso(addDays(parse(p.to), 1)), `🏖️ 连休 ${p.len} 天${p.names.length ? '（' + p.names.join('、') + '）' : ''}`, planText(p)));
+  p.leave.forEach(l => lines.push(...ev(`leave-${l}`, l, iso(addDays(parse(l), 1)), '📝 请假', planText(p))));
+  lines.push('END:VCALENDAR');
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `拼假-${p.from}.ics`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+function renderCalendar() {
+  const p = state.sel && findPlan(state.sel.from, state.sel.to);
+  const idx = new Map(A.days.map((d, i) => [d.iso, i]));
+  let html = '';
+  for (let m = 0; m < 12; m++) {
+    const first = new Date(state.year, m, 1), n = new Date(state.year, m + 1, 0).getDate();
+    let cells = '<span></span>'.repeat((first.getDay() + 6) % 7);
+    let offCount = 0;
+    for (let d = 1; d <= n; d++) {
+      const k = iso(new Date(state.year, m, d)), day = A.days[idx.get(k)];
+      const i = idx.get(k);
+      const inSpan = p && i >= p.s && i <= p.e;
+      const cls = ['d', day.kind === 'normal' ? '' : day.kind, inSpan ? 'span' : '', inSpan && !day.off ? 'leave' : '', k === todayIso ? 'today' : '', day.est ? 'est' : ''].join(' ');
+      if (day.kind === 'hol') offCount++;
+      const title = day.name ? `${day.name}${day.kind === 'work' ? '（调休上班）' : ''}${day.est ? '（预估）' : ''}` : '';
+      cells += `<span class="${cls}" title="${title}">${d}</span>`;
+    }
+    html += `<div class="panel month" id="m-${state.year}-${String(m + 1).padStart(2, '0')}"><h4>${m + 1} 月<small>${offCount ? `放假 ${offCount} 天` : ''}</small></h4><div class="dow">${WEEK.map(w => `<span>${w}</span>`).join('')}</div><div class="days">${cells}</div></div>`;
+  }
+  $('#months').innerHTML = html;
+}
+
+function renderCountdown() {
+  const map = buildDayMap(state.region);
+  const keys = [...map.keys()].filter(k => map.get(k).off && k >= todayIso).sort();
+  const el = $('#countdown');
+  if (!keys.length) { el.innerHTML = '<h3>下一个假期</h3><div class="muted">暂无数据</div>'; return; }
+  const next = keys[0], info = map.get(next);
+  const days = Math.round((parse(next) - parse(todayIso)) / 864e5);
+  let work = 0;
+  for (let d = parse(todayIso); iso(d) < next; d = addDays(d, 1)) {
+    const k = iso(d), inf = map.get(k), wd = (d.getDay() + 6) % 7;
+    if (inf ? !inf.off : wd < 5) work++;
+  }
+  el.innerHTML = `<h3>下一个假期 · ${state.region === 'cn' ? '内地' : '香港'}</h3>
+    <div class="count-big num">${days === 0 ? '今天' : days}<small>${days === 0 ? '就放假 🎉' : '天后'}</small></div>
+    <div style="margin-top:10px">
+      <div class="kv"><span>假期</span><b>${info.name}${info.est ? '（预估）' : ''}</b></div>
+      <div class="kv"><span>日期</span><b>${mdw(next)}${next.slice(0, 4) !== String(new Date().getFullYear()) ? ' · ' + next.slice(0, 4) : ''}</b></div>
+      <div class="kv"><span>还要上班</span><b class="num">${work} 天</b></div>
+    </div>`;
+}
+
+function renderAlloc() {
+  const B = Math.max(0, Math.min(30, state.balance | 0));
+  const r = allocate(A, B, futureOn());
+  const el = $('#alloc');
+  if (!r.picks.length) { el.innerHTML = '<div class="muted">没有能多休的组合</div>'; return; }
+  const used = r.picks.reduce((s, x) => s + x.k, 0);
+  el.innerHTML = `<div class="muted" style="margin-bottom:6px">用 ${used} 天年假，全年比不请假多休 <b style="color:var(--accent)">${r.gain}</b> 天</div>` +
+    r.picks.sort((a, b) => a.p.s - b.p.s).map(x => `<div class="alloc-row"><span>${x.name}</span><b class="num">请 ${x.k} → 休 ${x.p.len}</b><small>${md(x.p.from)}–${md(x.p.to)}，请 ${x.p.leave.map(md).join('、')}</small></div>`).join('');
+}
+
+function renderYearStat() {
+  const ds = A.days.filter(d => d.iso.startsWith(String(state.year)));
+  const hol = ds.filter(d => d.kind === 'hol').length, work = ds.filter(d => d.kind === 'work').length, off = ds.filter(d => d.off).length;
+  const cur = state.region === 'cn' ? DATA.cn[state.year] : null;
+  $('#yearStat').innerHTML = `<h3>${state.year} 年概况</h3>
+    <div class="kv"><span>放假（含周末调整）</span><b class="num">${hol} 天</b></div>
+    ${state.region === 'cn' ? `<div class="kv"><span>调休上班</span><b class="num">${work} 天</b></div>` : ''}
+    <div class="kv"><span>全年休息日</span><b class="num">${off} 天</b></div>
+    <div class="kv"><span>全年工作日</span><b class="num">${ds.length - off} 天</b></div>
+    ${cur ? `<div class="kv"><span>安排</span><b>${cur.official ? (cur.papers?.[0] ? `<a href="${cur.papers[0]}" target="_blank" rel="noopener" style="text-decoration:underline">官方通知</a>` : '官方') : '预估'}</b></div>` : ''}`;
+}
+
+function renderSources() {
+  $('#sources').innerHTML = (DATA.sources || []).map(s => `<div class="src"><span class="dot ${s.ok ? '' : 'bad'}"></span><span style="flex:1">${s.name}</span><span class="muted num">${!s.ok ? '失败' : s.count ? s.count + ' 天' : '未公布'}</span></div>`).join('');
+  const u = new Date(DATA.updated);
+  $('#updated').textContent = `更新于 ${u.getMonth() + 1}/${u.getDate()} ${String(u.getHours()).padStart(2, '0')}:${String(u.getMinutes()).padStart(2, '0')}`;
+}
+
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 1600);
+}
+
+// ── 事件 ──
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-from]');
+  if (b) {
+    const same = state.sel && state.sel.from === b.dataset.from && state.sel.to === b.dataset.to;
+    state.sel = same ? null : { from: b.dataset.from, to: b.dataset.to };
+    renderMatrix(); renderPlans(); renderDetail(); renderCalendar();
+    if (!same) $('#detail').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    return;
+  }
+  const v = e.target.closest('#viewSeg button');
+  if (v) { state.view = v.dataset.v; store.set('view', state.view); render(); scrollTo(0, 0); return; }
+  const r = e.target.closest('#regionSeg button');
+  if (r) { state.region = r.dataset.r; state.sel = null; store.set('region', state.region); render(); return; }
+  const y = e.target.closest('#yearSeg button');
+  if (y) { state.year = Number(y.dataset.y); state.sel = null; render(); }
+});
+function setN(n) {
+  state.n = Math.max(0, Math.min(MAX_N, n | 0));
+  $('#leaveInput').value = state.n; store.set('n', state.n);
+  renderHero(); renderPlans();
+}
+$('#minus').onclick = () => setN(state.n - 1);
+$('#plus').onclick = () => setN(state.n + 1);
+$('#leaveInput').oninput = e => setN(Number(e.target.value));
+$('#futureOnly').onchange = e => { state.futureOnly = e.target.checked; store.set('futureOnly', state.futureOnly); render(); };
+$('#balanceInput').oninput = e => { state.balance = Number(e.target.value) || 0; store.set('balance', state.balance); renderAlloc(); };
+
+function applyTheme(t) {
+  document.documentElement.dataset.theme = t;
+  $('#themeBtn').textContent = t === 'dark' ? '☾' : '☀';
+}
+applyTheme(store.get('theme', matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'));
+$('#themeBtn').onclick = () => { const t = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'; store.set('theme', t); applyTheme(t); };
+
+async function load() {
+  const btn = $('#reloadBtn'); btn.classList.add('spin');
+  try {
+    const r = await fetch('data.json?t=' + Date.now(), { cache: 'no-store' });
+    DATA = await r.json();
+    // 当年法定假期已过完时，默认看明年（比如 10 月之后就该规划明年了）
+    if (state.year === null) {
+      const y = new Date().getFullYear(), map = buildDayMap(state.region);
+      const left = [...map.keys()].some(k => k.startsWith(String(y)) && k >= todayIso && map.get(k).off);
+      state.year = left || !yearsFor(state.region).includes(y + 1) ? y : y + 1;
+    }
+    $('#leaveInput').value = state.n;
+    $('#balanceInput').value = state.balance;
+    $('#futureOnly').checked = state.futureOnly;
+    renderSources();
+    render();
+  } catch (err) {
+    $('#updated').textContent = '数据读取失败';
+    console.error(err);
+  } finally { btn.classList.remove('spin'); }
+}
+$('#reloadBtn').onclick = load;
+load();
+</script>
+</body>
+</html>
