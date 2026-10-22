@@ -151,14 +151,21 @@
     .strip i.h { background: var(--hol); opacity: 1; }
     .strip i.l { background: var(--leave); opacity: 1; }
 
-    /* 选中方案详情 */
-    .detail { padding: 16px 18px; margin-top: 14px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-    .detail-text { flex: 1; min-width: 220px; }
-    .detail-text b { font-size: 15px; }
-    .btn { padding: 7px 14px; border-radius: 10px; border: 1px solid var(--line-2); font-size: 13px; font-weight: 600; white-space: nowrap; }
-    .btn:hover { background: var(--hover); }
-    .btn.primary { background: var(--accent); color: #1b1305; border-color: var(--accent); }
-    .btn.primary:hover { filter: brightness(1.08); }
+    /* 详情抽屉里的逐日条：每天一格，假 / 请假 / 调休班 / 周末 */
+    .dstrip { display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: 4px; }
+    .dstrip span { border-radius: 8px; padding: 5px 2px; text-align: center; background: var(--hover); color: var(--text-3); min-width: 0; }
+    .dstrip b { display: block; font-size: 13px; color: var(--text-1); font-variant-numeric: tabular-nums; }
+    .dstrip small { display: block; font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dstrip .h { background: var(--hol-bg); color: var(--hol); }
+    .dstrip .l { background: var(--leave); color: #1b1305; }
+    .dstrip .l b { color: #1b1305; }
+    .dstrip .w { box-shadow: inset 0 0 0 2px var(--work); }
+    .dstrip .now { outline: 2px solid var(--text-1); outline-offset: -2px; }
+    .hp-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .hp-tbl th, .hp-tbl td { padding: 8px 6px; border-bottom: 1px solid var(--line); text-align: left; }
+    .hp-tbl th { font-size: 12px; color: var(--text-3); font-weight: 600; }
+    .hp-tbl tr[data-kit-go] { cursor: pointer; }
+    .hp-tbl tr[data-kit-go]:hover td { background: var(--hover); }
 
     /* 年历 */
     .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--text-2); }
@@ -198,7 +205,13 @@
     .empty { padding: 30px; text-align: center; color: var(--text-3); }
     .view { display: none; }
     .view.active { display: block; }
-    .toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(20px); opacity: 0; background: var(--text-1); color: var(--bg); padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; transition: .2s; pointer-events: none; z-index: 50; }
+    .section-title .kit-morelink { margin-left: auto; }
+    .matrix td.name { position: sticky; left: 0; z-index: 1; background: var(--panel); }   /* 手机横滑时假期名固定在左边 */
+    .widget[data-kit-item]:hover h3, .alloc-row[data-kit-item]:hover span { color: var(--accent); }
+    .widget[data-kit-item] h3::after { content: " ›"; }
+    .banner[data-kit-item] u { text-underline-offset: 2px; }
+    .d[data-kit-item]:hover { filter: brightness(1.15); box-shadow: 0 0 0 1px var(--line-2); }
+    .toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(20px); opacity: 0; background: var(--text-1); color: var(--bg); padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; transition: .2s; pointer-events: none; z-index: 100; }   /* 盖在详情抽屉上面 */
     .toast.show { opacity: 1; transform: translateX(-50%); }
 
     @media (max-width: 980px) {
@@ -212,6 +225,88 @@
       .hero { grid-template-columns: minmax(0,1fr); }
       .hero-big { font-size: 27px; }
       .stepper { align-items: flex-start; }
+    }
+    /* ── 详情抽屉 + 列表页（通用组件 kit：电脑右侧滑出，手机底部升起；地址 #/item/类型/id、#/list/key） ── */
+    :root { --kit-bg: var(--bg, #0b0a10); --kit-panel: var(--panel, var(--card, rgba(255,255,255,.04))); --kit-line: var(--line, var(--sep, rgba(255,255,255,.08)));
+      --kit-line2: var(--line-2, rgba(255,255,255,.14)); --kit-t1: var(--text-1, #f1eff7); --kit-t2: var(--text-2, #a39fb3); --kit-t3: var(--text-3, #6b677a);
+      --kit-accent: var(--accent, #a3e635); --kit-hover: var(--hover, rgba(255,255,255,.05)); }
+    .kit-mask { position: fixed; inset: 0; z-index: 90; background: rgba(0,0,0,.38); display: none; }
+    .kit-mask.open { display: block; }
+    .kit-sheet { position: absolute; top: 12px; right: 12px; bottom: 12px; width: clamp(440px, 42vw, 620px); max-width: calc(100vw - 24px);
+      display: flex; flex-direction: column; overflow: hidden; color: var(--kit-t1); border-radius: 18px;
+      background: linear-gradient(var(--kit-panel), var(--kit-panel)), var(--kit-bg); box-shadow: 0 0 0 1px var(--kit-line2), 0 24px 60px rgba(0,0,0,.45);
+      animation: kit-in .24s ease-out; }
+    @keyframes kit-in { from { transform: translateX(40px); opacity: 0; } }
+    .kit-x { position: absolute; top: 12px; right: 12px; z-index: 3; width: 32px; height: 32px; border-radius: 50%; border: 0; cursor: pointer;
+      background: rgba(0,0,0,.5); color: #fff; font-size: 15px; display: grid; place-items: center; }
+    .kit-scroll { flex: 1; overflow-y: auto; overscroll-behavior: contain; }
+    .kit-cover { aspect-ratio: 16/9; background: var(--kit-hover) center / cover no-repeat; position: relative; }
+    .kit-cover.tall { aspect-ratio: auto; height: 280px; background-size: contain; background-color: #000; }
+    .kit-cover.ph { display: grid; place-items: center; font-size: 56px; aspect-ratio: 16/6; }
+    .kit-head { padding: 18px 20px 4px; display: flex; gap: 14px; align-items: flex-start; }
+    .kit-head .kit-thumb { flex-shrink: 0; width: 64px; height: 64px; border-radius: 14px; background: var(--kit-hover) center / cover no-repeat;
+      display: grid; place-items: center; font-size: 28px; overflow: hidden; }
+    .kit-head .kit-t { flex: 1; min-width: 0; padding-right: 30px; }
+    .kit-cover + .kit-head .kit-t { padding-right: 0; }
+    .kit-head h2 { font-size: 19px; font-weight: 800; line-height: 1.35; letter-spacing: -0.01em; }
+    .kit-sub { color: var(--kit-t2); font-size: 13px; margin-top: 4px; }
+    .kit-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    .kit-tags span { font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 6px; background: var(--kit-hover); color: var(--kit-t2); }
+    .kit-big { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+    .kit-big b { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; }
+    .kit-body { padding: 4px 20px 20px; }
+    .kit-sec { padding-top: 16px; }
+    .kit-sec + .kit-sec { margin-top: 6px; border-top: 1px solid var(--kit-line); }
+    .kit-sec h4 { font-size: 14.5px; font-weight: 700; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+    .kit-sec h4 small { font-size: 12px; color: var(--kit-t3); font-weight: 500; }
+    .kit-kv { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
+    .kit-kv div { background: var(--kit-hover); border-radius: 10px; padding: 8px 11px; min-width: 0; }
+    .kit-kv small { display: block; font-size: 11px; color: var(--kit-t3); }
+    .kit-kv b { display: block; font-size: 14px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; }
+    .kit-p { font-size: 13.5px; line-height: 1.75; color: var(--kit-t2); white-space: pre-line; }
+    .kit-rows { display: flex; flex-direction: column; }
+    .kit-row { display: flex; gap: 10px; align-items: center; padding: 9px 0; border-top: 1px solid var(--kit-line); font-size: 13px; text-decoration: none; color: inherit; }
+    .kit-row:first-child { border-top: 0; }
+    .kit-row[data-kit-go], a.kit-row { cursor: pointer; }
+    .kit-row[data-kit-go]:hover .kit-rt, a.kit-row:hover .kit-rt { color: var(--kit-accent); }
+    .kit-row .kit-rt { flex: 1; min-width: 0; line-height: 1.45; }
+    .kit-row .kit-rm { color: var(--kit-t3); font-size: 12px; white-space: nowrap; }
+    .kit-row img, .kit-row .kit-ri { width: 54px; height: 40px; border-radius: 6px; object-fit: cover; flex-shrink: 0; background: var(--kit-hover); }
+    .kit-acts { flex-shrink: 0; display: flex; gap: 10px; padding: 12px 20px 16px; border-top: 1px solid var(--kit-line); }
+    .kit-acts a, .kit-acts button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 11px 12px; border-radius: 11px;
+      font: inherit; font-size: 13.5px; font-weight: 700; text-decoration: none; cursor: pointer; border: 1px solid var(--kit-line2); color: var(--kit-t1); background: transparent; }
+    .kit-acts .pri { background: var(--kit-accent); border-color: var(--kit-accent); color: #111; }
+    .kit-acts a:hover, .kit-acts button:hover { filter: brightness(1.08); }
+    /* 列表页 */
+    .kit-lhead { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .kit-back { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--kit-line2); background: transparent; color: var(--kit-t1);
+      font-size: 20px; cursor: pointer; display: grid; place-items: center; flex-shrink: 0; }
+    .kit-back:hover { background: var(--kit-hover); }
+    .kit-lhead h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+    .kit-lhead small { color: var(--kit-t3); font-size: 12.5px; margin-left: 2px; }
+    .kit-lbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+    .kit-chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+    .kit-chips a, .kit-chips button { padding: 5px 12px; border-radius: 8px; background: var(--kit-hover); color: var(--kit-t2); font: inherit; font-size: 13px;
+      font-weight: 600; white-space: nowrap; border: 0; cursor: pointer; text-decoration: none; }
+    .kit-chips .on { background: var(--kit-t1); color: var(--kit-bg); }
+    .kit-chips small { opacity: .6; margin-left: 4px; font-weight: 500; }
+    .kit-sel { padding: 6px 10px; border-radius: 9px; border: 1px solid var(--kit-line2); background: transparent; color: var(--kit-t1); font: inherit; font-size: 12.5px; font-weight: 600; }
+    .kit-sel option { background: var(--kit-bg); }
+    .kit-more { display: block; margin: 16px auto 0; padding: 9px 22px; border-radius: 10px; border: 1px solid var(--kit-line2); background: transparent;
+      color: var(--kit-t1); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .kit-more:hover { background: var(--kit-hover); }
+    .kit-morelink { font-size: 13px; font-weight: 600; color: var(--kit-t2); text-decoration: none; white-space: nowrap; cursor: pointer; }
+    .kit-morelink:hover { color: var(--kit-t1); }
+    [data-kit-item] { cursor: pointer; }
+    @media (max-width: 760px) {
+      .kit-sheet { top: auto; left: 0; right: 0; bottom: 0; width: 100%; max-width: none; height: 86vh; border-radius: 18px 18px 0 0; animation: kit-up .26s ease-out; }
+      @keyframes kit-up { from { transform: translateY(30%); opacity: .5; } }
+      .kit-head { padding: 16px 16px 4px; } .kit-body { padding: 4px 16px 18px; } .kit-acts { padding: 10px 16px 16px; }
+      .kit-cover.tall { height: 220px; }
+      .kit-head .kit-thumb { width: 46px; height: 46px; border-radius: 12px; font-size: 22px; }
+      .kit-head h2 { font-size: 17.5px; }
+      .kit-big b { font-size: 24px; }
+      .kit-lhead h2 { font-size: 19px; }
     }
   </style>
 </head>
@@ -242,7 +337,7 @@
 
       <section class="view active" id="view-plan">
         <div class="panel hero">
-          <div>
+          <div id="heroText">
             <div class="hero-k" id="heroK">全年最划算</div>
             <div class="hero-big" id="heroBig">—</div>
             <div class="hero-sub" id="heroSub"></div>
@@ -258,17 +353,16 @@
           </div>
         </div>
 
-        <div class="section-title">每个假期怎么拼<small>格子里是连休天数，点一下看具体请哪几天；颜色高亮表示比不请假多休</small></div>
+        <div class="section-title">每个假期怎么拼<small>格子里是连休天数，点一下看具体请哪几天、加到日历；颜色高亮表示比不请假多休</small></div>
         <div class="panel grid-wrap" id="matrix"></div>
 
-        <div class="section-title">全年最划算 Top 10<small id="topHint"></small></div>
+        <div class="section-title">全年最划算<small id="topHint"></small><a class="kit-morelink" id="plansMore" href="#/list/plans">全部方案 →</a></div>
         <div class="plans" id="plans"></div>
-
-        <div class="panel detail" id="detail" hidden></div>
       </section>
+      <section id="listView" hidden></section>
 
       <section class="view" id="view-cal">
-        <div class="section-title" style="margin-top:0">全年日历
+        <div class="section-title" style="margin-top:0">全年日历<small>点放假、调休日看属于哪个假期</small>
           <div class="legend">
             <span><i style="background:var(--hol-bg);box-shadow:inset 0 0 0 1px var(--hol)"></i>放假</span>
             <span><i style="background:var(--work-bg);box-shadow:inset 0 0 0 1px var(--work)"></i>调休上班</span>
@@ -302,6 +396,133 @@
   <div class="toast" id="toast"></div>
 
 <script>
+// ── kit：详情抽屉 + 列表页路由（各站通用，内联在页面里）──
+// 用法：
+//   KIT.item('news', id => ({ title, sub, cover, thumb, tags:[], big, body:'<div class="kit-sec">…</div>', acts:[{text, href, pri}] }))
+//   KIT.list('news', (param, query) => { … 把列表页 HTML 写进容器 … })
+//   条目元素加 data-kit-item="news/<id>" 即可点击打开详情；「查看更多」写成 <a href="#/list/news">
+//   站点首页渲染函数里先调用 KIT.route() —— 返回 true 表示当前是列表页（已渲染），首页不用再渲染
+const KIT = (() => {
+  const items = {}, lists = {};
+  let mask, homeY = 0, fromHome = 0, lastHash = location.hash, onHome = null, listBox = null;
+  const kesc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const parse = h => {
+    const m = (h === undefined ? location.hash : h).match(/^#\/(item|list)\/([^?]+?)(?:\?(.*))?$/);
+    if (!m) return null;
+    const [type, ...rest] = m[2].split('/');
+    return { kind: m[1], type: decodeURIComponent(type), id: rest.map(decodeURIComponent).join('/'), q: new URLSearchParams(m[3] || '') };
+  };
+  function ensure() {
+    if (mask) return;
+    mask = document.createElement('div');
+    mask.className = 'kit-mask';
+    mask.innerHTML = '<div class="kit-sheet" role="dialog" aria-modal="true"></div>';
+    document.body.appendChild(mask);
+    mask.addEventListener('click', e => { if (e.target === mask || e.target.closest('[data-kit-close]')) close(); });
+  }
+  function render(d) {
+    ensure();
+    const cover = d.cover ? `<div class="kit-cover ${d.coverTall ? 'tall' : ''}" style="background-image:url('${kesc(d.cover).replace(/'/g, '%27')}')"></div>`
+      : d.coverIcon ? `<div class="kit-cover ph" style="background:${d.coverBg || 'var(--kit-hover)'}">${d.coverIcon}</div>` : '';
+    const thumb = !d.cover && !d.coverIcon && (d.thumb || d.thumbIcon)
+      ? `<div class="kit-thumb" style="${d.thumb ? `background-image:url('${kesc(d.thumb).replace(/'/g, '%27')}')` : ''}${d.thumbBg ? `;background-color:${d.thumbBg}` : ''}">${d.thumb ? '' : d.thumbIcon}</div>` : '';
+    const acts = (d.acts || []).filter(a => a && (a.href || a.onclick));
+    mask.firstElementChild.innerHTML = `<button class="kit-x" data-kit-close aria-label="关闭">✕</button>
+      <div class="kit-scroll">${cover}
+        <div class="kit-head">${thumb}<div class="kit-t"><h2>${kesc(d.title)}</h2>${d.sub ? `<div class="kit-sub">${d.sub}</div>` : ''}
+          ${(d.tags || []).filter(Boolean).length ? `<div class="kit-tags">${d.tags.filter(Boolean).join('')}</div>` : ''}${d.big ? `<div class="kit-big">${d.big}</div>` : ''}</div></div>
+        <div class="kit-body">${d.body || ''}</div></div>
+      ${acts.length ? `<div class="kit-acts">${acts.map((a, i) => a.href
+        ? `<a class="${a.pri || (i === 0 && acts.length < 3) ? 'pri' : ''}" href="${kesc(a.href)}" ${a.self ? '' : 'target="_blank" rel="noopener"'}>${a.text}</a>`
+        : `<button class="${a.pri ? 'pri' : ''}" data-kit-act="${i}">${a.text}</button>`).join('')}</div>` : ''}`;
+    acts.forEach((a, i) => { if (!a.href) { const b = mask.querySelector(`[data-kit-act="${i}"]`); if (b) b.onclick = a.onclick; } });
+    mask.querySelector('.kit-scroll').scrollTop = 0;
+    mask.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  // 打开详情：写进地址（可分享；浏览器返回 = 关闭）
+  function open(key) {
+    const target = '#/item/' + key;
+    if (location.hash === target) return show(parse(target));
+    ensure();
+    if (parse()?.kind === 'item') history.replaceState(history.state, '', target);
+    else { mask.dataset.base = location.hash; history.pushState({ kit: 1 }, '', target); }
+    lastHash = target;
+    show(parse(target));
+  }
+  function show(r) {
+    const fn = items[r.type];
+    const d = fn && fn(r.id, r.q);
+    if (!d) { close(true); return false; }
+    render(d);
+    return true;
+  }
+  function close(silent) {
+    if (!mask || !mask.classList.contains('open')) return;
+    mask.classList.remove('open');
+    document.body.style.overflow = '';
+    if (!silent && parse()?.kind === 'item') {
+      if (history.state && history.state.kit) history.back();          // 从页面里点开的：退回去
+      else { history.replaceState(null, '', mask.dataset.base || location.pathname + location.search); lastHash = location.hash; }   // 直接打开的分享链接
+    }
+  }
+  // 当前地址是列表页时渲染列表页并返回 true；首页时返回 false
+  function route(box) {
+    if (box) listBox = box;
+    const r = parse();
+    if (r && r.kind === 'list' && lists[r.type]) { lists[r.type](r.id, r.q, listBox); return true; }
+    return false;
+  }
+  // 列表页的公共外壳：返回按钮 + 标题 + 子分类 + 排序
+  function shell({ title, note, chips, sort, sortVal, body, more }) {
+    return `<div class="kit-lhead"><button class="kit-back" data-kit-back title="返回">‹</button><h2>${kesc(title)}</h2>${note ? `<small>${note}</small>` : ''}</div>
+      ${chips || sort ? `<div class="kit-lbar"><div class="kit-chips">${(chips || []).map(c => `<a class="${c.on ? 'on' : ''}" href="${kesc(c.href)}">${kesc(c.text)}${c.count != null ? `<small>${c.count}</small>` : ''}</a>`).join('')}</div>
+        ${sort ? `<select class="kit-sel" data-kit-sort>${sort.map(([v, n]) => `<option value="${kesc(v)}" ${v === sortVal ? 'selected' : ''}>${kesc(n)}</option>`).join('')}</select>` : ''}</div>` : ''}
+      ${body}${more ? `<button class="kit-more" data-kit-more>${more}</button>` : ''}`;
+  }
+  function init(home) {
+    onHome = home;
+    document.addEventListener('click', e => {
+      const t = e.target.closest('[data-kit-item],[data-kit-go],[data-kit-back]');
+      if (!t) return;
+      const inner = e.target.closest('a[href],button,input,select,label,summary');   // 卡片里的其它按钮 / 链接（关注、复制…）优先
+      if (inner && inner !== t && t.contains(inner)) return;
+      e.preventDefault();
+      if (t.dataset.kitBack !== undefined) { fromHome && history.length > fromHome ? history.go(-fromHome) : (location.hash = ''); return; }
+      open(t.dataset.kitItem || t.dataset.kitGo);
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+    window.addEventListener('hashchange', () => {
+      const r = parse();
+      let was = parse(lastHash), steps = 1;
+      if (was && was.kind === 'item') {                                 // 从详情离开
+        const base = mask && mask.dataset.base !== undefined ? mask.dataset.base : '';
+        if (location.hash === base) { lastHash = location.hash; close(true); return; }   // 只是关掉详情，底下页面不动
+        was = parse(base); steps = 2;                                   // 在详情里点了别的列表：按详情底下那页算，返回要退两步
+      }
+      lastHash = location.hash;
+      if (r && r.kind === 'item') { show(r); return; }
+      close(true);
+      const wasHome = !was;
+      if (r && r.kind === 'list') {
+        if (wasHome) { homeY = scrollY; fromHome = steps; }
+        onHome && onHome();
+        if (wasHome || was.type !== r.type) scrollTo(0, 0);
+      } else {
+        onHome && onHome();
+        if (fromHome) { scrollTo(0, homeY); fromHome = 0; }
+      }
+    });
+    // 直接打开带 #/item/ 的链接（比如大屏跳过来）：页面数据读完后由站点调用 KIT.boot()
+  }
+  function boot() { const r = parse(); if (r && r.kind === 'item') show(r); }
+  return { item: (t, fn) => (items[t] = fn), list: (t, fn) => (lists[t] = fn), open, close, route, shell, init, boot, parse, esc: kesc,
+    // 小工具：详情里的键值格、段落、关联列表
+    kv: rows => { const r = rows.filter(x => x && x[1] != null && x[1] !== ''); return r.length ? `<div class="kit-kv">${r.map(([k, v]) => `<div><small>${kesc(k)}</small><b title="${kesc(v)}">${kesc(v)}</b></div>`).join('')}</div>` : ''; },
+    sec: (title, html, note) => html ? `<div class="kit-sec"><h4>${title}${note ? `<small>${note}</small>` : ''}</h4>${html}</div>` : '',
+    p: t => t ? `<p class="kit-p">${kesc(t)}</p>` : '',
+  };
+})();
 const $ = s => document.querySelector(s);
 const store = {
   get(k, d) { try { const v = localStorage.getItem('hp.' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
@@ -383,7 +604,14 @@ function analyse(region, y) {
   const pre = [0];
   days.forEach(d => pre.push(pre[pre.length - 1] + (d.off ? 0 : 1)));
   const work = (s, e) => pre[e + 1] - pre[s];
-  return { days, groups, work, y };
+  return { days, groups, work, y, region };
+}
+// 按地区 + 年份缓存分析结果（详情抽屉会算别的年份）
+const AC = new Map();
+function analyseCached(region, y) {
+  const k = region + y;
+  if (!AC.has(k)) AC.set(k, analyse(region, y));
+  return AC.get(k);
 }
 
 // 以 s 为起点、请假不超过 n 天能延伸到的最远位置
@@ -396,8 +624,8 @@ function mkPlan(A, s, e) {
   const used = A.work(s, e);
   const leave = [];
   for (let i = s; i <= e; i++) if (!A.days[i].off) leave.push(A.days[i].iso);
-  const names = [...new Set(A.days.slice(s, e + 1).filter(d => d.kind === 'hol').map(d => state.region === 'hk' ? hkGroup(d.name) : d.name))];
-  return { s, e, len: e - s + 1, used, leave, names, from: A.days[s].iso, to: A.days[e].iso };
+  const names = [...new Set(A.days.slice(s, e + 1).filter(d => d.kind === 'hol').map(d => A.region === 'hk' ? hkGroup(d.name) : d.name))];
+  return { s, e, len: e - s + 1, used, leave, names, from: A.days[s].iso, to: A.days[e].iso, region: A.region, y: A.y };
 }
 
 // 某个假期分组：请 k 天能拼出的最长连休（必须包含该假期至少一天）
@@ -418,7 +646,7 @@ function bestForGroup(A, g, k) {
 
 // 全年：请 ≤ n 天的连休区间，按长度排序、贪心取不重叠。
 // 只从休息日起、到休息日止：首尾的请假只是 1 天换 1 天，不算「拼」
-function topPlans(A, n, futureOnly) {
+function topPlans(A, n, futureOnly, limit = 10) {
   const cands = [];
   for (let s = 0; s < A.days.length; s++) {
     if (!A.days[s].off || (s > 0 && A.days[s - 1].off)) continue;
@@ -435,7 +663,7 @@ function topPlans(A, n, futureOnly) {
   for (const p of cands) {
     if (picked.some(q => !(p.e < q.s || p.s > q.e))) continue;
     picked.push(p);
-    if (picked.length >= 10) break;
+    if (picked.length >= limit) break;
   }
   return picked;
 }
@@ -479,13 +707,17 @@ function render() {
     const now = new Date().getFullYear();
     state.year = years.includes(now) ? now : years[years.length - 1];
   }
-  A = analyse(state.region, state.year);
+  A = analyseCached(state.region, state.year);
   renderSegs(years);
+  // #/list/… 列表页：渲染进 #listView，首页的两个视图先藏起来
+  const isList = KIT.route($('#listView'));
+  $('#listView').hidden = !isList;
+  $('#banners').hidden = isList;
+  if (isList) document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   renderBanners();
   renderHero();
   renderMatrix();
   renderPlans();
-  renderDetail();
   renderCalendar();
   renderCountdown();
   renderAlloc();
@@ -509,8 +741,8 @@ function renderBanners() {
   for (const [y, a] of Object.entries(DATA.announce || {})) {
     const days = (Date.now() - new Date(a.first_seen).getTime()) / 864e5;
     if (a.fresh && days <= 14 && state.region === 'cn') {
-      const paper = DATA.cn[y]?.papers?.[0];
-      out.push(`<div class="banner new">🎉 ${y} 年放假安排已公布${paper ? `，<a href="${paper}" target="_blank" rel="noopener">查看国务院通知</a>` : ''}。下面的方案已按官方安排（含调休）重新计算。</div>`);
+      // 国务院通知外链放进抽屉底部按钮
+      out.push(`<div class="banner new" data-kit-item="year/cn-${y}">🎉 ${y} 年放假安排已公布，<u>查看安排和国务院通知 ›</u>。下面的方案已按官方安排（含调休）重新计算。</div>`);
     }
   }
   const cur = DATA.cn[state.year];
@@ -522,14 +754,20 @@ function renderBanners() {
   $('#banners').innerHTML = out.join('');
 }
 
+// 详情 id：方案 plan/cn-2027-02-05-2027-02-14，某天 day/cn-2027-01-01，全年安排 year/cn-2027
+const planId = p => `plan/${p.region}-${p.from}-${p.to}`;
+const dayId = (region, k) => `day/${region}-${k}`;
+
 function renderHero() {
   const b = topPlans(A, state.n, futureOn())[0];
   $('#heroK').textContent = `${state.year} 年 · ${state.region === 'cn' ? '内地' : '香港'} · 请 ≤ ${state.n} 天最划算`;
+  if (b) $('#heroText').dataset.kitItem = planId(b); else delete $('#heroText').dataset.kitItem;
   if (!b) { $('#heroBig').textContent = '没有可拼的假期'; $('#heroSub').textContent = futureOn() ? '今年剩下的假期已经过完了，可以切到明年看看。' : ''; return; }
   $('#heroBig').innerHTML = b.used ? `请 <em>${b.used}</em> 天，连休 <em>${b.len}</em> 天` : `不用请假，连休 <em>${b.len}</em> 天`;
   $('#heroSub').textContent = `${mdw(b.from)} – ${mdw(b.to)}${b.names.length ? ' · ' + b.names.join('、') : ''}${b.used ? ' · 请假：' + b.leave.map(md).join('、') : ''}`;
 }
 
+const isSel = p => state.sel && state.sel.from === p.from && state.sel.to === p.to;
 function renderMatrix() {
   const ks = [0, 1, 2, 3, 4, 5];
   if (!A.groups.length) { $('#matrix').innerHTML = '<div class="empty">这一年没有假期数据</div>'; return; }
@@ -543,10 +781,9 @@ function renderMatrix() {
       // 请 k 天和请 k-1 天一样长 → 多请没用，弱化
       const prev = i ? plans[i - 1] : null;
       const useless = prev && p.len === prev.len;
-      const sel = state.sel && state.sel.from === p.from && state.sel.to === p.to;
-      return `<td><button class="cell ${p.len > base ? 'gain' : ''} ${useless ? 'dim' : ''} ${sel ? 'sel' : ''}" data-from="${p.from}" data-to="${p.to}"><b class="num">${p.len}</b><small>${useless ? '多请没用' : p.used ? `${md(p.from)}–${md(p.to)}` : '法定+周末'}</small></button></td>`;
+      return `<td><button class="cell ${p.len > base ? 'gain' : ''} ${useless ? 'dim' : ''} ${isSel(p) ? 'sel' : ''}" data-kit-item="${planId(p)}"><b class="num">${p.len}</b><small>${useless ? '多请没用' : p.used ? `${md(p.from)}–${md(p.to)}` : '法定+周末'}</small></button></td>`;
     }).join('');
-    return `<tr class="${past ? 'past' : ''}"><td class="name"><b>${g.name}</b><small>${md(first.iso)}${first.iso !== last.iso ? '–' + md(last.iso) : ''}${first.est ? ' · 预估' : ''}</small></td>${cells}</tr>`;
+    return `<tr class="${past ? 'past' : ''}"><td class="name" data-kit-item="${dayId(A.region, first.iso)}"><b>${g.name}</b><small>${md(first.iso)}${first.iso !== last.iso ? '–' + md(last.iso) : ''}${first.est ? ' · 预估' : ''}</small></td>${cells}</tr>`;
   }).join('');
   $('#matrix').innerHTML = `<table class="matrix"><thead><tr><th>假期</th>${ks.map(k => `<th>${k ? `请 ${k} 天` : '不请假'}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>`;
 }
@@ -554,42 +791,31 @@ function renderMatrix() {
 function strip(p) {
   return `<div class="strip">${A.days.slice(p.s, p.e + 1).map(d => `<i class="${d.kind === 'hol' ? 'h' : !d.off ? 'l' : ''}"></i>`).join('')}</div>`;
 }
+function planCard(p) {
+  const eff = p.used ? `1 换 ${(p.len / p.used).toFixed(1)}` : '免请假';
+  return `<button class="plan ${isSel(p) ? 'sel' : ''}" data-kit-item="${planId(p)}">
+    <div class="plan-top"><span class="plan-days num">${p.len}<small>天</small></span>${p.names.slice(0, 2).map(n => `<span class="tag">${n}</span>`).join('')}<span class="tag eff">${eff}</span></div>
+    <div class="plan-range">${mdw(p.from)} – ${mdw(p.to)}</div>
+    <div class="plan-leave">${p.used ? `请 ${p.used} 天：${p.leave.map(md).join('、')}` : '法定假日 + 周末，不用请假'}</div>
+    ${strip(p)}
+  </button>`;
+}
+const HOME_PLANS = 6;
 function renderPlans() {
-  const list = topPlans(A, state.n, futureOn());
+  const all = topPlans(A, state.n, futureOn(), Infinity), list = all.slice(0, HOME_PLANS);
   $('#topHint').textContent = `请假不超过 ${state.n} 天，互不重叠，按连休天数排序${futureOn() ? '，只含今天之后' : ''}`;
+  $('#plansMore').textContent = `全部 ${all.length} 个方案 →`;
+  $('#plansMore').style.display = all.length > HOME_PLANS ? '' : 'none';
   if (!list.length) { $('#plans').innerHTML = '<div class="panel empty" style="grid-column:1/-1">没有找到方案</div>'; return; }
-  $('#plans').innerHTML = list.map(p => {
-    const sel = state.sel && state.sel.from === p.from && state.sel.to === p.to;
-    const eff = p.used ? `1 换 ${(p.len / p.used).toFixed(1)}` : '免请假';
-    return `<button class="plan ${sel ? 'sel' : ''}" data-from="${p.from}" data-to="${p.to}">
-      <div class="plan-top"><span class="plan-days num">${p.len}<small>天</small></span>${p.names.slice(0, 2).map(n => `<span class="tag">${n}</span>`).join('')}<span class="tag eff">${eff}</span></div>
-      <div class="plan-range">${mdw(p.from)} – ${mdw(p.to)}</div>
-      <div class="plan-leave">${p.used ? `请 ${p.used} 天：${p.leave.map(md).join('、')}` : '法定假日 + 周末，不用请假'}</div>
-      ${strip(p)}
-    </button>`;
-  }).join('');
+  $('#plans').innerHTML = list.map(planCard).join('');
 }
 
-function findPlan(from, to) {
+function findPlan(A, from, to) {
   const s = A.days.findIndex(d => d.iso === from), e = A.days.findIndex(d => d.iso === to);
-  return s >= 0 && e >= 0 ? mkPlan(A, s, e) : null;
+  return s >= 0 && e >= s ? mkPlan(A, s, e) : null;
 }
 function planText(p) {
-  return `${state.region === 'cn' ? '' : '香港 '}${p.names.join('、') || '连休'}：${mdw(p.from)} – ${mdw(p.to)} 连休 ${p.len} 天${p.used ? `，请假 ${p.used} 天（${p.leave.map(md).join('、')}）` : '，不用请假'}`;
-}
-function renderDetail() {
-  const el = $('#detail');
-  const p = state.sel && findPlan(state.sel.from, state.sel.to);
-  if (!p) { el.hidden = true; return; }
-  el.hidden = false;
-  const work = A.days.slice(p.s, p.e + 1).filter(d => d.kind === 'work').map(d => md(d.iso));
-  el.innerHTML = `<div class="detail-text"><b>${planText(p)}</b><div class="muted" style="margin-top:4px">${work.length ? `其中 ${work.join('、')} 是调休上班日，也要请假。` : ''}${A.days[p.s].est ? '预估安排，以官方通知为准。' : ''}</div></div>
-    <button class="btn" id="copyBtn">复制文字</button>
-    <button class="btn" id="calBtn">在年历中查看</button>
-    <button class="btn primary" id="icsBtn">加到手机日历</button>`;
-  $('#copyBtn').onclick = () => { navigator.clipboard?.writeText(planText(p)).then(() => toast('已复制'), () => toast('复制失败')); };
-  $('#calBtn').onclick = () => { state.view = 'cal'; store.set('view', 'cal'); render(); document.getElementById('m-' + p.from.slice(0, 7))?.scrollIntoView({ behavior: 'smooth', block: 'center' }); };
-  $('#icsBtn').onclick = () => downloadIcs(p);
+  return `${p.region === 'cn' ? '' : '香港 '}${p.names.join('、') || '连休'}：${mdw(p.from)} – ${mdw(p.to)} 连休 ${p.len} 天${p.used ? `，请假 ${p.used} 天（${p.leave.map(md).join('、')}）` : '，不用请假'}`;
 }
 
 function downloadIcs(p) {
@@ -609,7 +835,7 @@ function downloadIcs(p) {
 }
 
 function renderCalendar() {
-  const p = state.sel && findPlan(state.sel.from, state.sel.to);
+  const p = state.sel && findPlan(A, state.sel.from, state.sel.to);
   const idx = new Map(A.days.map((d, i) => [d.iso, i]));
   let html = '';
   for (let m = 0; m < 12; m++) {
@@ -623,7 +849,8 @@ function renderCalendar() {
       const cls = ['d', day.kind === 'normal' ? '' : day.kind, inSpan ? 'span' : '', inSpan && !day.off ? 'leave' : '', k === todayIso ? 'today' : '', day.est ? 'est' : ''].join(' ');
       if (day.kind === 'hol') offCount++;
       const title = day.name ? `${day.name}${day.kind === 'work' ? '（调休上班）' : ''}${day.est ? '（预估）' : ''}` : '';
-      cells += `<span class="${cls}" title="${title}">${d}</span>`;
+      // 放假 / 调休日可点：触屏上没有悬停提示，点开抽屉看是哪个假期
+      cells += `<span class="${cls}" title="${title}"${day.name ? ` data-kit-item="${dayId(A.region, k)}"` : ''}>${d}</span>`;
     }
     html += `<div class="panel month" id="m-${state.year}-${String(m + 1).padStart(2, '0')}"><h4>${m + 1} 月<small>${offCount ? `放假 ${offCount} 天` : ''}</small></h4><div class="dow">${WEEK.map(w => `<span>${w}</span>`).join('')}</div><div class="days">${cells}</div></div>`;
   }
@@ -634,7 +861,7 @@ function renderCountdown() {
   const map = buildDayMap(state.region);
   const keys = [...map.keys()].filter(k => map.get(k).off && k >= todayIso).sort();
   const el = $('#countdown');
-  if (!keys.length) { el.innerHTML = '<h3>下一个假期</h3><div class="muted">暂无数据</div>'; return; }
+  if (!keys.length) { delete el.dataset.kitItem; el.innerHTML = '<h3>下一个假期</h3><div class="muted">暂无数据</div>'; return; }
   const next = keys[0], info = map.get(next);
   const days = Math.round((parse(next) - parse(todayIso)) / 864e5);
   let work = 0;
@@ -642,6 +869,7 @@ function renderCountdown() {
     const k = iso(d), inf = map.get(k), wd = (d.getDay() + 6) % 7;
     if (inf ? !inf.off : wd < 5) work++;
   }
+  el.dataset.kitItem = dayId(state.region, next);
   el.innerHTML = `<h3>下一个假期 · ${state.region === 'cn' ? '内地' : '香港'}</h3>
     <div class="count-big num">${days === 0 ? '今天' : days}<small>${days === 0 ? '就放假 🎉' : '天后'}</small></div>
     <div style="margin-top:10px">
@@ -658,19 +886,20 @@ function renderAlloc() {
   if (!r.picks.length) { el.innerHTML = '<div class="muted">没有能多休的组合</div>'; return; }
   const used = r.picks.reduce((s, x) => s + x.k, 0);
   el.innerHTML = `<div class="muted" style="margin-bottom:6px">用 ${used} 天年假，全年比不请假多休 <b style="color:var(--accent)">${r.gain}</b> 天</div>` +
-    r.picks.sort((a, b) => a.p.s - b.p.s).map(x => `<div class="alloc-row"><span>${x.name}</span><b class="num">请 ${x.k} → 休 ${x.p.len}</b><small>${md(x.p.from)}–${md(x.p.to)}，请 ${x.p.leave.map(md).join('、')}</small></div>`).join('');
+    r.picks.sort((a, b) => a.p.s - b.p.s).map(x => `<div class="alloc-row" data-kit-item="${planId(x.p)}"><span>${x.name}</span><b class="num">请 ${x.k} → 休 ${x.p.len}</b><small>${md(x.p.from)}–${md(x.p.to)}，请 ${x.p.leave.map(md).join('、')}</small></div>`).join('');
 }
 
 function renderYearStat() {
   const ds = A.days.filter(d => d.iso.startsWith(String(state.year)));
   const hol = ds.filter(d => d.kind === 'hol').length, work = ds.filter(d => d.kind === 'work').length, off = ds.filter(d => d.off).length;
   const cur = state.region === 'cn' ? DATA.cn[state.year] : null;
+  $('#yearStat').dataset.kitItem = `year/${state.region}-${state.year}`;
   $('#yearStat').innerHTML = `<h3>${state.year} 年概况</h3>
     <div class="kv"><span>放假（含周末调整）</span><b class="num">${hol} 天</b></div>
     ${state.region === 'cn' ? `<div class="kv"><span>调休上班</span><b class="num">${work} 天</b></div>` : ''}
     <div class="kv"><span>全年休息日</span><b class="num">${off} 天</b></div>
     <div class="kv"><span>全年工作日</span><b class="num">${ds.length - off} 天</b></div>
-    ${cur ? `<div class="kv"><span>安排</span><b>${cur.official ? (cur.papers?.[0] ? `<a href="${cur.papers[0]}" target="_blank" rel="noopener" style="text-decoration:underline">官方通知</a>` : '官方') : '预估'}</b></div>` : ''}`;
+    ${cur ? `<div class="kv"><span>安排</span><b>${cur.official ? '官方通知' : '预估'}</b></div>` : ''}`;
 }
 
 function renderSources() {
@@ -679,23 +908,174 @@ function renderSources() {
   $('#updated').textContent = `更新于 ${u.getMonth() + 1}/${u.getDate()} ${String(u.getHours()).padStart(2, '0')}:${String(u.getMinutes()).padStart(2, '0')}`;
 }
 
+// ── 详情（右侧抽屉）与列表页 ──
+const RNAME = { cn: '内地', hk: '香港' };
+const tag = t => t ? `<span>${KIT.esc(t)}</span>` : '';
+const daysTo = k => Math.round((parse(k) - parse(todayIso)) / 864e5);
+// 取能覆盖这些日期的分析：优先当前选中的年份（这样首页高亮能同步）
+function anFor(region, ...isos) {
+  if (!DATA) return null;
+  const ys = yearsFor(region), cand = isos.map(s => +s.slice(0, 4));
+  const y = region === state.region && cand.includes(state.year) ? state.year : cand.find(y => ys.includes(y));
+  return y ? analyseCached(region, y) : null;
+}
+// 逐日条：每天一格
+function dayStrip(A2, s, e, mark) {
+  return `<div class="dstrip">${A2.days.slice(s, e + 1).map(d => {
+    const cls = [d.kind === 'hol' ? 'h' : !d.off ? 'l' : '', d.kind === 'work' ? 'w' : '', d.iso === mark ? 'now' : ''].join(' ');
+    const lab = d.kind === 'hol' ? (A2.region === 'hk' ? hkGroup(d.name) : d.name) : d.kind === 'work' ? '调休班' : !d.off ? '请假' : '周末';
+    return `<span class="${cls}" title="${d.iso} ${d.name || ''}"><b>${md(d.iso)}</b><small>周${WEEK[d.wd]}</small><small>${lab}</small></span>`;
+  }).join('')}</div>`;
+}
+// 假期分组的放假日、调休上班日
+function groupDays(A2, g) {
+  const hol = g.idx.map(i => A2.days[i].iso);
+  const work = A2.region === 'cn' ? A2.days.filter(d => d.kind === 'work' && d.name === g.name && d.iso.startsWith(String(A2.y))).map(d => d.iso) : [];
+  return { hol, work };
+}
+// 同一假期请 0~5 天的几种拼法（去掉「多请没用」的）
+function groupOptions(A2, g) {
+  const out = [];
+  for (let k = 0; k <= 5; k++) {
+    const p = bestForGroup(A2, g, k);
+    if (p && !out.some(q => q.len === p.len)) out.push(p);
+  }
+  return out;
+}
+const planRow = (p, cur) => `<div class="kit-row" ${cur ? '' : `data-kit-go="${planId(p)}"`}><span class="kit-rt">${cur ? '<b>' : ''}${p.used ? `请 ${p.used} 天 → 连休 ${p.len} 天` : `不请假，连休 ${p.len} 天`}${cur ? '（当前查看）</b>' : ''}</span><span class="kit-rm">${md(p.from)}–${md(p.to)}${p.used ? ' · 请 ' + p.leave.map(md).join('、') : ''}</span></div>`;
+
+KIT.item('plan', id => {
+  const m = id.match(/^(cn|hk)-(\d{4}-\d\d-\d\d)-(\d{4}-\d\d-\d\d)$/); if (!m) return null;
+  const [, region, from, to] = m;
+  const A2 = anFor(region, from, to); if (!A2) return null;
+  const p = findPlan(A2, from, to); if (!p) return null;
+  // 首页同一年同一地区：同步高亮矩阵格 / 方案卡 / 年历
+  if (A2 === A) { state.sel = { from, to }; renderMatrix(); renderPlans(); renderCalendar(); }
+  const work = A2.days.slice(p.s, p.e + 1).filter(d => d.kind === 'work').map(d => mdw(d.iso));
+  const est = A2.days.slice(p.s, p.e + 1).some(d => d.est);
+  const gs = A2.groups.filter(g => g.idx.some(i => i >= p.s && i <= p.e));
+  const until = daysTo(p.from);
+  return { title: `${p.names.join('、') || '周末连休'} · 连休 ${p.len} 天`, sub: `${mdw(p.from)} – ${mdw(p.to)} · ${p.from.slice(0, 4)} 年 · ${RNAME[region]}`,
+    thumbIcon: '🏖️', thumbBg: 'var(--leave-bg)',
+    tags: [tag(p.used ? `请 ${p.used} 天` : '不用请假'), tag(p.used ? `1 天换 ${(p.len / p.used).toFixed(1)} 天` : ''), tag(est ? '预估安排' : ''),
+      tag(until > 0 ? `${until} 天后开始` : p.to < todayIso ? '已过去' : '进行中')],
+    big: `<b>${p.len}</b><span class="muted">天连休</span>${p.used ? `<b style="color:var(--leave)">${p.used}</b><span class="muted">天请假</span>` : ''}`,
+    body: KIT.sec('逐日安排', dayStrip(A2, p.s, p.e), '橙色为要请假的日子')
+      + KIT.sec('要点', KIT.kv([['开始', mdw(p.from)], ['结束', mdw(p.to)], ['连休', p.len + ' 天'], ['请假', p.used ? p.used + ' 天' : '不用'],
+        ['其中调休上班', work.length ? work.length + ' 天' : '']]))
+      + KIT.sec('请假日', KIT.p(p.used ? p.leave.map(mdw).join('、') + (work.length ? `\n其中 ${work.join('、')} 是调休上班日，也要请假。` : '') : '这段连休全是法定假日和周末，不用请假。')
+        + (est ? KIT.p('预估安排，以官方通知为准。') : ''))
+      + gs.map(g => KIT.sec(`${g.name}的其它拼法`, `<div class="kit-rows">${groupOptions(A2, g).map(q => planRow(q, q.from === p.from && q.to === p.to)).join('')}</div>`,
+        `<a class="kit-morelink" href="#/item/${dayId(region, A2.days[g.idx[0]].iso)}">假期安排 →</a>`)).join(''),
+    acts: [
+      { text: '复制文字', onclick: () => navigator.clipboard?.writeText(planText(p)).then(() => toast('已复制'), () => toast('复制失败')) },
+      { text: '在年历中查看', onclick: () => showInCalendar(p) },
+      { text: '加到手机日历', pri: true, onclick: () => downloadIcs(p) },
+    ] };
+});
+// 关掉抽屉、回到首页年历，滚到这段连休所在的月份
+function showInCalendar(p) {
+  state.region = p.region; state.year = +p.from.slice(0, 4); state.sel = { from: p.from, to: p.to };
+  if (!yearsFor(p.region).includes(state.year)) state.year = +p.to.slice(0, 4);
+  state.view = 'cal'; store.set('view', 'cal'); store.set('region', state.region);
+  KIT.close();
+  setTimeout(() => {
+    if (KIT.parse()) location.hash = ''; else render();
+    setTimeout(() => document.getElementById('m-' + p.from.slice(0, 7))?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 120);
+  }, 60);
+}
+
+KIT.item('day', id => {
+  const m = id.match(/^(cn|hk)-(\d{4}-\d\d-\d\d)$/); if (!m) return null;
+  const [, region, k] = m;
+  let A2 = anFor(region, k); if (!A2) return null;
+  const i = A2.days.findIndex(d => d.iso === k); if (i < 0) return null;
+  const d = A2.days[i];
+  // 放假日按分组找；调休上班日按假期名找（cn 调休日和假期同名）
+  let g = A2.groups.find(x => x.idx.includes(i));
+  if (!g && d.kind === 'work') {
+    g = A2.groups.find(x => x.name === d.name);
+    const A3 = !g && yearsFor(region).includes(A2.y + 1) ? analyseCached(region, A2.y + 1) : null;   // 年底的调休可能属于明年元旦
+    if (A3) { const g3 = A3.groups.find(x => x.name === d.name); if (g3) { A2 = A3; g = g3; } }
+  }
+  const dayLine = `${mdw(k)} · ${k.slice(0, 4)} 年 · ${d.kind === 'hol' ? '放假' : d.kind === 'work' ? '调休上班' : d.off ? '周末' : '工作日'} · ${RNAME[region]}`;
+  if (!g) return { title: d.name || mdw(k), sub: dayLine, thumbIcon: '📅' };
+  const { hol, work } = groupDays(A2, g);
+  const base = bestForGroup(A2, g, 0);
+  const until = daysTo(hol[0]), est = A2.days[g.idx[0]].est;
+  const others = A2.groups.filter(x => x !== g);
+  const paper = region === 'cn' ? DATA.cn[A2.y]?.papers?.[0] : null;
+  return { title: g.name, sub: dayLine, thumbIcon: d.kind === 'work' ? '💼' : '🎉', thumbBg: d.kind === 'work' ? 'var(--work-bg)' : 'var(--hol-bg)',
+    tags: [tag(est ? '预估安排' : region === 'cn' ? '官方安排' : '公众假期'), d.kind === 'work' ? tag('这天要上班') : ''],
+    big: until > 0 ? `<b>${until}</b><span class="muted">天后放假</span>` : hol[hol.length - 1] >= todayIso ? '<b>正在放假</b>' : '<span class="muted">已过去</span>',
+    body: KIT.sec('整个假期安排', KIT.kv([['放假', `${md(hol[0])}${hol.length > 1 ? '–' + md(hol[hol.length - 1]) : ''}`], ['法定放假', hol.length + ' 天'],
+        ['调休上班', work.length ? work.map(md).join('、') : (region === 'cn' && !est ? '无' : '')], ['不请假连休', base ? `${base.len} 天（${md(base.from)}–${md(base.to)}）` : '']])
+        + (base ? `<div style="margin-top:10px">${dayStrip(A2, base.s, base.e, k)}</div>` : '')
+        + (est ? KIT.p('官方安排还没公布，这里只按放假办法预估法定假日，不含调休上班日。') : ''))
+      + KIT.sec('怎么拼', `<div class="kit-rows">${groupOptions(A2, g).map(q => planRow(q)).join('')}</div>`, '点一行看详情')
+      + KIT.sec(`${A2.y} 年其它假期`, `<div class="kit-rows">${others.map(x => { const f = A2.days[x.idx[0]].iso, l = A2.days[x.idx[x.idx.length - 1]].iso;
+        return `<div class="kit-row" data-kit-go="${dayId(region, f)}"><span class="kit-rt">${x.name}</span><span class="kit-rm">${md(f)}${f !== l ? '–' + md(l) : ''} · ${x.idx.length} 天</span></div>`; }).join('')}</div>`,
+        `<a class="kit-morelink" href="#/item/year/${region}-${A2.y}">全年安排 →</a>`),
+    acts: [paper ? { text: '国务院通知 ↗', href: paper } : null, region === 'hk' ? { text: '1823 公众假期 ↗', href: 'https://www.gov.hk/sc/about/abouthk/holiday/' } : null,
+      { text: '全年安排', href: `#/item/year/${region}-${A2.y}`, self: true }] };
+});
+
+KIT.item('year', id => {
+  const m = id.match(/^(cn|hk)-(\d{4})$/); if (!m || !DATA) return null;
+  const region = m[1], y = +m[2];
+  if (!yearsFor(region).includes(y)) return null;
+  const A2 = analyseCached(region, y), cur = region === 'cn' ? DATA.cn[y] : null;
+  const ds = A2.days.filter(d => d.iso.startsWith(String(y)));
+  const est = cur && !cur.official;
+  return { title: `${y} 年放假安排 · ${RNAME[region]}`, sub: region === 'cn' ? (est ? '官方安排未公布，以下为预估' : '国务院办公厅通知') : '香港公众假期（1823）',
+    thumbIcon: '🗓️', thumbBg: 'var(--hol-bg)', tags: [tag(est ? '预估' : '官方'), cur?.stale ? tag('沿用上次数据') : ''],
+    big: `<b>${ds.filter(d => d.kind === 'hol').length}</b><span class="muted">天放假</span>${region === 'cn' ? `<b>${ds.filter(d => d.kind === 'work').length}</b><span class="muted">天调休上班</span>` : ''}`,
+    body: KIT.sec('各假期', `<table class="hp-tbl"><tr><th>假期</th><th>放假</th><th>天数</th>${region === 'cn' ? '<th>调休上班</th>' : ''}</tr>${A2.groups.map(g => {
+        const { hol, work } = groupDays(A2, g);
+        return `<tr data-kit-go="${dayId(region, hol[0])}"><td><b>${g.name}</b></td><td>${md(hol[0])}${hol.length > 1 ? '–' + md(hol[hol.length - 1]) : ''}</td><td>${hol.length}</td>${region === 'cn' ? `<td>${work.map(md).join('、') || '—'}</td>` : ''}</tr>`; }).join('')}</table>`, '点一行看详情')
+      + (est ? KIT.sec('说明', KIT.p('官方通知通常在前一年 11 月发布。预估只按《全国年节及纪念日放假办法》算法定假日，落在周末的顺延补休，不含调休上班日。')) : ''),
+    acts: [cur?.papers?.[0] ? { text: '国务院通知 ↗', href: cur.papers[0] } : null, region === 'hk' ? { text: '1823 公众假期 ↗', href: 'https://www.gov.hk/sc/about/abouthk/holiday/' } : null] };
+});
+
+// 列表页：全部方案（不限 10 条），可切请假天数、排序
+const LPAGE = 30;
+let listN = LPAGE;
+const SORTS = [['len', '按连休天数'], ['used', '按请假天数（少的在前）'], ['eff', '按性价比'], ['date', '按日期']];
+KIT.list('plans', (_, q, box) => {
+  const n = q.has('n') ? Math.max(0, Math.min(MAX_N, +q.get('n') | 0)) : state.n, sort = q.get('sort') || 'len';
+  const all = topPlans(A, n, futureOn(), Infinity);
+  const ratio = p => p.used ? p.len / p.used : p.len + 100;   // 免请假的排最前
+  const cmp = { len: (a, b) => b.len - a.len || a.used - b.used, used: (a, b) => a.used - b.used || b.len - a.len, eff: (a, b) => ratio(b) - ratio(a) || b.len - a.len, date: (a, b) => a.s - b.s }[sort] || (() => 0);
+  all.sort((a, b) => cmp(a, b) || a.s - b.s);
+  const href = k => `#/list/plans?n=${k}${sort !== 'len' ? '&sort=' + sort : ''}`;
+  box.innerHTML = KIT.shell({ title: '全部方案', note: `${state.year} 年 · ${RNAME[state.region]} · 请 ≤ ${n} 天 · ${all.length} 个互不重叠${futureOn() ? ' · 只含今天之后' : ''}`,
+    chips: [0, 1, 2, 3, 4, 5, 6, 8, 10].map(k => ({ text: k ? `请 ≤ ${k} 天` : '不请假', href: href(k), on: k === n, count: topPlans(A, k, futureOn(), Infinity).length })),
+    sort: SORTS, sortVal: sort,
+    body: all.length ? `<div class="plans">${all.slice(0, listN).map(planCard).join('')}</div>` : '<div class="panel empty">没有找到方案</div>',
+    more: all.length > listN ? `加载更多（${listN} / ${all.length}）` : '' });
+});
+document.addEventListener('click', e => { if (e.target.closest('[data-kit-more]')) { listN += LPAGE; render(); } });
+document.addEventListener('change', e => {
+  if (!e.target.matches('[data-kit-sort]')) return;
+  const r = KIT.parse(); if (!r || r.kind !== 'list') return;
+  r.q.set('sort', e.target.value);
+  location.hash = `#/list/${r.type}?${r.q}`;
+});
+window.addEventListener('hashchange', () => { if (KIT.parse()?.kind !== 'item') listN = LPAGE; }, true);
+
 function toast(msg) {
   const t = $('#toast'); t.textContent = msg; t.classList.add('show');
   clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 1600);
 }
 
-// ── 事件 ──
+// ── 事件 ──（矩阵格、方案卡、年历日格的点击由 kit 打开详情）
 document.addEventListener('click', e => {
-  const b = e.target.closest('[data-from]');
-  if (b) {
-    const same = state.sel && state.sel.from === b.dataset.from && state.sel.to === b.dataset.to;
-    state.sel = same ? null : { from: b.dataset.from, to: b.dataset.to };
-    renderMatrix(); renderPlans(); renderDetail(); renderCalendar();
-    if (!same) $('#detail').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  const v = e.target.closest('#viewSeg button');
+  if (v) {
+    state.view = v.dataset.v; store.set('view', state.view);
+    if (KIT.parse()?.kind === 'list') location.hash = ''; else { render(); scrollTo(0, 0); }   // 列表页上切视图 = 回首页
     return;
   }
-  const v = e.target.closest('#viewSeg button');
-  if (v) { state.view = v.dataset.v; store.set('view', state.view); render(); scrollTo(0, 0); return; }
   const r = e.target.closest('#regionSeg button');
   if (r) { state.region = r.dataset.r; state.sel = null; store.set('region', state.region); render(); return; }
   const y = e.target.closest('#yearSeg button');
@@ -724,6 +1104,7 @@ async function load() {
   try {
     const r = await fetch('data.json?t=' + Date.now(), { cache: 'no-store' });
     DATA = await r.json();
+    AC.clear();
     // 当年法定假期已过完时，默认看明年（比如 10 月之后就该规划明年了）
     if (state.year === null) {
       const y = new Date().getFullYear(), map = buildDayMap(state.region);
@@ -735,12 +1116,14 @@ async function load() {
     $('#futureOnly').checked = state.futureOnly;
     renderSources();
     render();
+    KIT.boot();
   } catch (err) {
     $('#updated').textContent = '数据读取失败';
     console.error(err);
   } finally { btn.classList.remove('spin'); }
 }
 $('#reloadBtn').onclick = load;
+KIT.init(render);
 load();
 </script>
 </body>
